@@ -43,8 +43,6 @@
 
 
 //Memory allocation
-////Allocates a block of size bytes of memory,
-//returning a pointer to the beginning of the block.
 #define ALLOC_TYPE(type, var, items, ligne) \
     var = (type *)malloc(sizeof(type) * items); \
 if (!var) \
@@ -53,8 +51,7 @@ if (!var) \
     return FALSE; \
 }
 
-//Sets the first sizeof(type)*items bytes
-//of the block of memory pointed by var to 0.
+//Malloc + set la memoire a zero
 #define CALLOC_TYPE(type, var, items, ligne) \
     ALLOC_TYPE(type, var, items, ligne); \
 memset(var, 0, sizeof(type) * items) 
@@ -192,6 +189,13 @@ printf(x)
  *  FUNCTIONS DEFINITIONS
  *-----------------------------------------------------------------------------*/
 
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  void print_stack(t_pile_termes* p)
+ *  Description:  Prints stack p content.
+ * =====================================================================================
+ */
 void print_stack(t_pile_termes* p)
 {
     printf("Printing stack...\n");
@@ -206,7 +210,13 @@ void print_stack(t_pile_termes* p)
     printf("\n");
 }
 
-//Operations functions definitions
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  bool addition(double gauche, double droite, double *resultat)
+ *  Description:  Sum of gauche and droite
+ * =====================================================================================
+ */
 bool addition(double gauche, double droite, double *resultat)
 {
     *resultat = gauche + droite;
@@ -214,6 +224,12 @@ bool addition(double gauche, double droite, double *resultat)
 }
 
 
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  bool soustraction(double gauche, double droite, double *resultat)
+ *  Description:  Difference of gauche and droite
+ * =====================================================================================
+ */
 bool soustraction(double gauche, double droite, double *resultat)
 {
     *resultat = gauche - droite;
@@ -221,6 +237,12 @@ bool soustraction(double gauche, double droite, double *resultat)
 }
 
 
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  bool multiplication(double gauche, double droite, double *resultat)
+ *  Description:  Product of gauche and droite
+ * =====================================================================================
+ */
 bool multiplication(double gauche, double droite, double *resultat)
 {
     *resultat = gauche * droite;
@@ -228,6 +250,12 @@ bool multiplication(double gauche, double droite, double *resultat)
 }
 
 
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  bool division(double gauche, double droite, double *resultat)
+ *  Description:  Quotient of gauche and droite
+ * =====================================================================================
+ */
 bool division(double gauche, double droite, double *resultat)
 {
     if (!droite)
@@ -260,7 +288,6 @@ t_op *type_op(char c)
 }
 
 
-
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  _my_strdup(char *p, int len)
@@ -278,8 +305,13 @@ char *_my_strdup(char *p, int len)
     return ptr;
 }
 
-/* :WARNING:07/05/2014 09:35:58:: DEPRECATED */
-// File reading of the expression
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  bool lire_expr_postfix_DEPRECATED(t_str *s, FILE *infile)
+ *  Description:  Read expression from string  
+ *  WARNING:07/05/2014 09:35:58:: DEPRECATED
+ * =====================================================================================
+ */
 bool lire_expr_postfix_DEPRECATED(t_str *s, FILE *infile)
 {
     char c;
@@ -369,7 +401,12 @@ bool pop_pile_termes(t_pile_termes *p, t_expr **noeud)
 }
 
 
-//Free expression
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  void liberer_expr(t_expr **p)
+ *  Description:  Free recursively memory of p
+ * =====================================================================================
+ */
 void liberer_expr(t_expr **p)
 {
     if (!*p)
@@ -403,7 +440,13 @@ void liberer_expr(t_expr **p)
 }
 
 
-//Free stack
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  void liberer_pile_termes(t_pile_termes *p)
+ *  Description:  Free stack 
+ * =====================================================================================
+ */
 void liberer_pile_termes(t_pile_termes *p)
 {
     t_expr *temp;
@@ -413,7 +456,12 @@ void liberer_pile_termes(t_pile_termes *p)
 }
 
 
-//Convert postfix to abstract syntax
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  void liberer_expr(t_expr **p)bool convertir_postfix_en_ASA(t_str *s, t_pile_termes *pile_termes, t_ASA **ASA)
+ *  Description:  Convert postfix expression to abstract syntax tree using a stack
+ * =====================================================================================
+ */
 bool convertir_postfix_en_ASA(t_str *s, t_pile_termes *pile_termes, t_ASA **ASA)
 {
     char *p; //string postfix temporaire
@@ -515,7 +563,13 @@ wrapup:
 }
 
 
-//Add brackets to an expression
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  void ajouter_parentheses(t_expr *parent, t_expr *gauche, bool *parenthese_gauche, t_expr *droite, bool *parenthese_droite)
+ *  Description:  Ajout de parentheses a l'expression
+ * =====================================================================================
+ */
 void ajouter_parentheses(t_expr *parent, t_expr *gauche, bool *parenthese_gauche, t_expr *droite, bool *parenthese_droite)
 {
     *parenthese_gauche = FALSE;
@@ -538,7 +592,12 @@ void ajouter_parentheses(t_expr *parent, t_expr *gauche, bool *parenthese_gauche
 }
 
 
-//Generate an expression
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name: bool generer_expressions(t_expr *p)
+ *  Description: Generate expressions in C, PostScript, Scheme and get value
+ * =====================================================================================
+ */
 bool generer_expressions(t_expr *p)
 {
     if (p->type == OP)
