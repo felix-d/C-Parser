@@ -27,7 +27,7 @@
 
 #define TRUE 1
 #define FALSE 0
-#define CHIFFRE "0123456789"
+#define CHIFFRES "0123456789"
 
 
 //Return true if x is of type "operator"
@@ -39,7 +39,7 @@
 
 
 //Print error related expression
-#define PREFIX_ERREUR printf("Erreur dans expression #%d : ", expr)
+#define PREFIX_ERREUR printf("Erreur dans expression #%d : ", nb_expr)
 
 
 //Memory allocation
@@ -82,7 +82,7 @@ bool division(double gauche, double droite, double *resultat);
 
 
 //Function pointer for operation
-typedef bool (*t_funky)(double gauche, double droite, double *resultat);
+typedef bool (*t_op_funct)(double gauche, double droite, double *resultat);
 
 
 //Struct for operators
@@ -91,7 +91,7 @@ typedef struct _op
     char symbole;
     char precedence;
     char dependance;
-    t_funky funk;
+    t_op_funct funct;
 } t_op; 
 
 
@@ -119,13 +119,14 @@ typedef struct _expr
         {
             char *str;
         } nombre;
+        //Operation with left and right members
         struct
         {
             t_op *op;
             struct _expr *gauche, *droite;
         } op;
     } _;
-    //Different formats
+    //Different string formats
     char *strScheme;
     char *strC;
     char *strPostScript;
@@ -137,9 +138,9 @@ typedef t_expr t_ASA;
 
 
 //Struct for the stack
-typedef struct _pile_termes
+typedef struct
 {
-    int alloc;
+    int alloc; //top?
     int util;
     t_expr **termes;
 } t_pile_termes;
@@ -151,6 +152,7 @@ typedef struct _pile_termes
 
 
 //List of possible operations
+//symbol, precedance, dependance, op type
 t_op liste_op[] = 
 { 
     {'+', 0x00, FALSE, addition}, 
@@ -164,7 +166,12 @@ t_op liste_op[] =
 char *postscript_op[] = {"add", "sub", "mul", "div"};
 
 
-static int expr = 1;
+static int nb_expr = 1;
+
+
+/*-----------------------------------------------------------------------------
+ *  ERROR DEBUGGING LEVEL
+ *-----------------------------------------------------------------------------*/
 
 
 //Pre processing for error debugging
@@ -244,10 +251,9 @@ char *_my_strdup(char *p, int len)
     return ptr;
 }
 
-
-/* :WARNING:06/05/2014 23:58:33:: A CHANGER */
+ /* :WARNING:07/05/2014 09:35:58:: DEPRECATED */
 // File reading of the expression
-bool lire_expr_postfix(t_str *s, FILE *infile)
+bool lire_expr_postfix_DEPRECATED(t_str *s, FILE *infile)
 {
     char c;
     s->util = 0;
@@ -275,6 +281,7 @@ bool lire_expr_postfix(t_str *s, FILE *infile)
 
         if (c == '\n') c = 0;
 
+        //
         s->str[s->util++] = c;
 
         if (!c) break;
@@ -370,12 +377,13 @@ void liberer_pile_termes(t_pile_termes *p)
 //Convert postfix to abstract syntax
 bool convertir_postfix_en_ASA(t_str *s, t_pile_termes *pile_termes, t_ASA **ASA)
 {
-    char *p;
-    t_expr *pTemp;
+    char *p; //string postfix temporaire
+    t_expr *pTemp; //expr postfix temporaire
     t_op *pOP;
     int len;
     bool succes = FALSE, syntaxe_invalide = FALSE;
 
+    printf("%s",s->str);
     for(p = s->str, len = 1, pTemp = NULL; 
             *p; 
             p += len, len = 1, pTemp = NULL)
@@ -410,7 +418,7 @@ bool convertir_postfix_en_ASA(t_str *s, t_pile_termes *pile_termes, t_ASA **ASA)
             continue;
         }
 
-        if ((len = strspn(p, CHIFFRE)))
+        if ((len = strspn(p, CHIFFRES)))
         {
             CALLOC_TYPE(t_expr, pTemp, 1, __LINE__);
 
@@ -532,7 +540,7 @@ bool generer_expressions(t_expr *p)
                );
 
         //printf("%f %c %f\n", p->_.op.gauche->valeur, p->_.op.op->symbole, p->_.op.droite->valeur);
-        if (!p->_.op.op->funk(p->_.op.gauche->valeur, p->_.op.droite->valeur, &p->valeur))
+        if (!p->_.op.op->funct(p->_.op.gauche->valeur, p->_.op.droite->valeur, &p->valeur))
             return FALSE;
 
         return TRUE;
@@ -570,62 +578,62 @@ void imprimer_expressions(t_str *s, t_expr *p)
 int main(int argc, char **argv)
 {
     int status = 2;
-    t_str s = {0, 0, NULL};
-    t_pile_termes pile_termes = {0, 0, NULL};
+    bool input_errors = TRUE;
+    t_str s = {0, 0, NULL}; //alloc,util,*char
+    t_pile_termes pile_termes = {0, 0, NULL}; //alloc,util,**t_expr
+    
+    //Declaration of 3 pointers for base expression members
     t_expr *expr1;
     t_expr *expr2;
     t_expr *expr3;
+
+    //Input
+    char input[1000];
+
+    //Declaration of abstract syntax tree
     t_ASA *pASA = NULL;
-    FILE *infile;
 
-    infile = fopen(argv[1], "r");
-    if (!infile)
-    {
-        printf("Problème lors de l'ouverture du fichier d'entrée.\n");
-        return 2;
-    } 
+    //La boucle va boucler tant quil y a des expressions en input
+    while(1){
+        //Output
+        printf("EXPRESSION? ");
 
-    for(;
-            !feof(infile);
-            expr++)
-    {
-        liberer_expr(&pASA);
+        //Get input
+        fgets(input, sizeof input, stdin);
+        s.str = input;
 
-        if (!lire_expr_postfix(&s, infile))
-            continue;
-
-        if (feof(infile))
-            break;
-
-        if (!*s.str || 
-                (strspn(s.str, " ") == s.util - 1))
-            continue;
-
-        if (!strcmp(s.str, "^D"))
-            break;
-
-        printf("EXPRESSION? %s\n", s.str);
-
+       
+        //On convertie l'expression en postfix
         if (!convertir_postfix_en_ASA(&s, &pile_termes, &pASA))
             continue;
 
+        //On genere les differentes expressions
         if (!generer_expressions(pASA))    
             continue;
 
+        //On imprime les differentes expressions
         imprimer_expressions(&s, pASA);
-    }
 
-    if (pile_termes.alloc)
-    {
-        FREE_PTR(pile_termes.termes);
-        pile_termes.util = pile_termes.alloc = 0;
-    }
+        
+        //FREE MEMORY*****
+        
+        //On libere le pointeur a larbre de syntaxe pour lexpression courante 
+        liberer_expr(&pASA);
 
-    if (s.alloc)
-    {
-        FREE_PTR(s.str);
-        s.alloc = s.util = 0;
-    }
+        //On libere le stack
+        if (pile_termes.alloc)
+        {
+            FREE_PTR(pile_termes.termes);
+            pile_termes.util = pile_termes.alloc = 0;
+        }
 
+        //On libere la string
+        if (s.alloc)
+        {
+            FREE_PTR(s.str);
+            s.alloc = s.util = 0;
+        }
+    }
+   
     return 1;
 }
