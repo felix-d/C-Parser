@@ -43,6 +43,8 @@
 
 
 //Memory allocation
+////Allocates a block of size bytes of memory,
+//returning a pointer to the beginning of the block.
 #define ALLOC_TYPE(type, var, items, ligne) \
     var = (type *)malloc(sizeof(type) * items); \
 if (!var) \
@@ -51,10 +53,11 @@ if (!var) \
     return FALSE; \
 }
 
-
+//Sets the first sizeof(type)*items bytes
+//of the block of memory pointed by var to 0.
 #define CALLOC_TYPE(type, var, items, ligne) \
     ALLOC_TYPE(type, var, items, ligne); \
-memset(var, 0, sizeof(type) * items)
+memset(var, 0, sizeof(type) * items) 
 
 
 //Free pointer X
@@ -140,8 +143,8 @@ typedef t_expr t_ASA;
 //Struct for the stack
 typedef struct
 {
-    int alloc; //top?
-    int util;
+    int alloc; //number of elements
+    int util; //position actuelle dans le stack
     t_expr **termes;
 } t_pile_termes;
 
@@ -175,13 +178,13 @@ static int nb_expr = 1;
 
 
 //Pre processing for error debugging
-//#define tp1_debug
+#define tp1_debug
 #ifdef tp1_debug
-  #define DEBUG_PRINT(x) \
-       PREFIX_ERREUR; \
-       printf(x)
+#define DEBUG_PRINT(x) \
+    PREFIX_ERREUR; \
+printf(x)
 #else
-  #define DEBUG_PRINT(x)
+#define DEBUG_PRINT(x)
 #endif
 
 
@@ -189,6 +192,19 @@ static int nb_expr = 1;
  *  FUNCTIONS DEFINITIONS
  *-----------------------------------------------------------------------------*/
 
+void print_stack(t_pile_termes* p)
+{
+    printf("Printing stack...\n");
+
+    for(int i=0;i<p->util;i++){
+        if(p->termes[i]->type==2)
+            printf(" %c ", *p->termes[i]->_.nombre.str);
+        else
+            printf(" %c ", p->termes[i]->_.op.op->symbole);
+
+    }
+    printf("\n");
+}
 
 //Operations functions definitions
 bool addition(double gauche, double droite, double *resultat)
@@ -226,7 +242,12 @@ bool division(double gauche, double droite, double *resultat)
 }
 
 
-//Return type of operator
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  t_op *type_op(char c)
+ *  Description:  Return the operator type of a character
+ * =====================================================================================
+ */
 t_op *type_op(char c)
 {
     long i, end = sizeof(liste_op) / sizeof(liste_op[0]);
@@ -239,7 +260,13 @@ t_op *type_op(char c)
 }
 
 
-//String duplication?
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  _my_strdup(char *p, int len)
+ *  Description:  Return a pointer copy  
+ * =====================================================================================
+ */
 char *_my_strdup(char *p, int len)
 {
     char *ptr = NULL;
@@ -251,7 +278,7 @@ char *_my_strdup(char *p, int len)
     return ptr;
 }
 
- /* :WARNING:07/05/2014 09:35:58:: DEPRECATED */
+/* :WARNING:07/05/2014 09:35:58:: DEPRECATED */
 // File reading of the expression
 bool lire_expr_postfix_DEPRECATED(t_str *s, FILE *infile)
 {
@@ -292,39 +319,51 @@ bool lire_expr_postfix_DEPRECATED(t_str *s, FILE *infile)
 }
 
 
-//Push an expression on the stack
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  bool push_pile_termes(t_pile_termes *p, t_expr *noeud)
+ *  Description:  Push an expression on the stack, after increasing its size by 16
+ * =====================================================================================
+ */
 bool push_pile_termes(t_pile_termes *p, t_expr *noeud)
 {
     if (p->util == p->alloc)
     {
         t_pile_termes temp;
-
         temp.alloc = !p->alloc ? 16 : p->alloc << 1;
+        
         /* Ce qui suit est est un simili realloc en utilisant malloc et free
            La raison d'être de ce simili realloc est que l'énoncé stipule qu'il
            faut utiliser la fonction malloc pour l'allocation de la mémoire. */
-        ALLOC_TYPE(t_expr *, temp.termes, temp.alloc, __LINE__);
+
+        ALLOC_TYPE(t_expr *, temp.termes, temp.alloc, __LINE__); 
         memcpy(temp.termes, p->termes, p->alloc * sizeof(t_expr **));
         FREE_PTR(p->termes);
         p->alloc = temp.alloc;
         p->termes = temp.termes;
     }
-
     p->termes[p->util] = noeud;
     p->util++;
-
+    print_stack(p);
     return TRUE;
 }
 
 
-//Pop the stack
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  bool pop_pile_termes(t_pile_termes *p, t_expr **noeud)
+ *  Description:  Pop an expression from the stack
+ * =====================================================================================
+ */
 bool pop_pile_termes(t_pile_termes *p, t_expr **noeud)
 {
-    if (!p->util)
+    if (!p->util) //si la pile est vide
         return FALSE;
+    p->termes[p->util] = NULL;
+    p->util--; //decrement current position on stack
+    *noeud = p->termes[p->util]; //on retourne le noeud
 
-    p->util--;
-    *noeud = p->termes[p->util];
 
     return TRUE;
 }
@@ -379,25 +418,44 @@ bool convertir_postfix_en_ASA(t_str *s, t_pile_termes *pile_termes, t_ASA **ASA)
 {
     char *p; //string postfix temporaire
     t_expr *pTemp; //expr postfix temporaire
-    t_op *pOP;
-    int len;
+    t_op *pOP; //operateur temporaire
+    int len; //position du chiffre
     bool succes = FALSE, syntaxe_invalide = FALSE;
 
-    printf("%s",s->str);
-    for(p = s->str, len = 1, pTemp = NULL; 
-            *p; 
-            p += len, len = 1, pTemp = NULL)
+    //BOUCLE QUI PARCOURT LA STRING
+    for(p = s->str, len = 1, pTemp = NULL; //p=string, length = 1, exprPostFix = NULL
+            *p; //Regarder si la string est alloue
+            p += len, len = 1, pTemp = NULL) //on augmente la position sur la string, on remet ptemp a null et len a 1
     {    
-        if (*p == ' ')
+        //SI LE CARACTERE EST UN ESPACE VIDE
+        if (*p == ' ') //si la string est un espace, on sen fou
             continue;
 
-        if ((pOP = type_op(*p)))
+        //SI CEST UN CHIFFRE
+        if ((len = strspn(p, CHIFFRES)))
         {
-            CALLOC_TYPE(t_expr, pTemp, 1, __LINE__);
+            CALLOC_TYPE(t_expr, pTemp, 1, __LINE__); //on libere de lespace pour lexpression dont le pointeur est ptemp
 
-            pTemp->type = OP;
-            pTemp->_.op.op = pOP;
+            pTemp->type = NOMBRE; //
+            pTemp->_.nombre.str = _my_strdup(p, len); //on copie len dans p
+            if (!pTemp->_.nombre.str)
+                goto wrapup;
 
+            if (!push_pile_termes(pile_termes, pTemp))
+                goto wrapup;
+            
+            continue;
+        }
+
+        //SI CEST UN OPERATEUR
+        if ((pOP = type_op(*p))) //si on peut setter loperateurTemporaire comme un operateur 
+        {
+            CALLOC_TYPE(t_expr, pTemp, 1, __LINE__); //On libere de lespace pour l'expression dont le pointeur est ptemp
+
+            pTemp->type = OP; //le type de ptemp est operator
+            pTemp->_.op.op = pOP;//operateur de ptemp est pOP
+
+            //on pop le terme de droite
             if (!pop_pile_termes(pile_termes, &pTemp->_.op.droite))
             {
                 syntaxe_invalide = TRUE;
@@ -405,6 +463,7 @@ bool convertir_postfix_en_ASA(t_str *s, t_pile_termes *pile_termes, t_ASA **ASA)
                 goto wrapup;
             }
 
+            //on pop le terme de gauche
             if (!pop_pile_termes(pile_termes, &pTemp->_.op.gauche))
             {
                 syntaxe_invalide = TRUE;
@@ -412,29 +471,17 @@ bool convertir_postfix_en_ASA(t_str *s, t_pile_termes *pile_termes, t_ASA **ASA)
                 goto wrapup;
             }
 
+            //on push lexpression
             if (!push_pile_termes(pile_termes, pTemp))
                 goto wrapup;
 
             continue;
         }
 
-        if ((len = strspn(p, CHIFFRES)))
-        {
-            CALLOC_TYPE(t_expr, pTemp, 1, __LINE__);
-
-            pTemp->type = NOMBRE;
-            pTemp->_.nombre.str = _my_strdup(p, len);
-            if (!pTemp->_.nombre.str)
-                goto wrapup;
-
-            if (!push_pile_termes(pile_termes, pTemp))
-                goto wrapup;
-
-            continue;
-        }
-
+        //SI CEST RIEN
         syntaxe_invalide = TRUE;
         DEBUG_PRINT("Caractère inconnu.\n");
+
         goto wrapup;
     }  
 
@@ -581,7 +628,7 @@ int main(int argc, char **argv)
     bool input_errors = TRUE;
     t_str s = {0, 0, NULL}; //alloc,util,*char
     t_pile_termes pile_termes = {0, 0, NULL}; //alloc,util,**t_expr
-    
+
     //Declaration of 3 pointers for base expression members
     t_expr *expr1;
     t_expr *expr2;
@@ -602,7 +649,7 @@ int main(int argc, char **argv)
         fgets(input, sizeof input, stdin);
         s.str = input;
 
-       
+
         //On convertie l'expression en postfix
         if (!convertir_postfix_en_ASA(&s, &pile_termes, &pASA))
             continue;
@@ -614,9 +661,9 @@ int main(int argc, char **argv)
         //On imprime les differentes expressions
         imprimer_expressions(&s, pASA);
 
-        
+
         //FREE MEMORY*****
-        
+
         //On libere le pointeur a larbre de syntaxe pour lexpression courante 
         liberer_expr(&pASA);
 
@@ -634,6 +681,6 @@ int main(int argc, char **argv)
             s.alloc = s.util = 0;
         }
     }
-   
+
     return 1;
 }
