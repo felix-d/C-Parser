@@ -1,0 +1,2360 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass report
+\begin_preamble
+
+
+\usepackage{ragged2e}
+\RaggedRight
+\renewcommand\thesection{\arabic{section}}
+\usepackage{adjustbox}
+\usepackage{listings}
+\setcounter{section}{0}
+\lstloadlanguages{R}
+\end_preamble
+\use_default_options true
+\begin_modules
+theorems-ams
+eqs-within-sections
+figs-within-sections
+\end_modules
+\maintain_unincluded_children false
+\language french
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\float_placement H
+\paperfontsize default
+\spacing onehalf
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip bigskip
+\quotes_language french
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Ã‰tude sur les rapports entre certaines mÃ©triques orientÃ©es-objet et le nombre
+ de dÃ©faillances d'une classe
+\end_layout
+
+\begin_layout Author
+IFT3913 - QualitÃ© du logiciel et mÃ©triques
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\end_inset
+
+DescÃ´teaux, FÃ©lix
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\end_inset
+
+Soukkani, Badr
+\end_layout
+
+\begin_layout Abstract
+Cette Ã©tude de cas, prÃ©sentÃ©e dans le cadre du cours QualitÃ© du logiciel
+ et mÃ©triques de l'UniversitÃ© de MontrÃ©al, tente d'Ã©tablir des rapports
+ entre les mesures orientÃ©es-objet prÃ©sentÃ©es par Jureczko et Spinellis
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Jur10"
+
+\end_inset
+
+, qui prÃ©sentent un ensemble Ã©tendu des mÃ©triques de Chidamber et Kemerer
+ 
+\begin_inset CommandInset citation
+LatexCommand citealp
+key "CK94"
+
+\end_inset
+
+, ainsi que et le nombre de dÃ©faillances par classe d'un systÃ¨me.
+ Pour ce faire, nous ferons l'usage d'outils statistiques, de modÃ¨les univariÃ©s,
+ de modÃ¨les multivariÃ©s et de modÃ¨les de prÃ©dictions.
+ En plus d'extraire des mesures quantitatives, nous ferons une analyse qualitati
+ve des procÃ©dÃ©s mis en oeuvre par les dÃ©veloppeurs pour limiter le nombre
+ dÃ©faillances.
+ 
+\end_layout
+
+\begin_layout Abstract
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+Ã€ l'Ã¨re de la programmation orientÃ©e objet, il est plus qu'important de
+ comprendre l'influence du design orientÃ©-objet sur la fiabilitÃ© d'un systÃ¨me.
+ Plusieurs facteurs entrent en ligne de compte lorsque l'on Ã©tudie les causes
+ et consÃ©quences de la fiabilitÃ©.
+ 
+\end_layout
+
+\begin_layout Standard
+Dans ce rapport, nous nous intÃ©ressons prÃ©cisemment aux nombres de dÃ©faillances
+ par classe d'un systÃ¨me, une notion de qualitÃ© trÃ¨s explicite et directement
+ liÃ©e Ã  l'Ã©tude de la fiabilitÃ©.
+ Nous tenterons donc d'Ã©tablir un rapport entre des mesures orientÃ©es objets
+ et le nombre de dÃ©faillances par classe d'un systÃ¨me.
+ 
+\end_layout
+
+\begin_layout Standard
+Nous dÃ©buterons par faire une description de l'Ã©tude de cas, soit en explicitant
+ son objet, son but, notre hypothÃ¨se, les critÃ¨res de qualitÃ© qui garantissent
+ la crÃ©dibilitÃ© des analyses effectuÃ©es, le point de vue et l'environnement.
+ 
+\end_layout
+
+\begin_layout Standard
+Puis nous ferons une description des systÃ¨mes Ã  l'Ã©tude et nous justifierons
+ ces choix.
+ 
+\end_layout
+
+\begin_layout Standard
+Suite Ã  une collecte des donnÃ©es concernÃ©es, nous passerons Ã  l'analyse
+ de ces donnÃ©es.
+ Nous ferons une description des mesures extraites, une identification des
+ observations aberrantes, une description des manipulations appliquÃ©es aux
+ variables ainsi qu'une prÃ©sentation des modÃ¨les univariÃ©s et multivariÃ©s
+ utilisÃ©s.
+ 
+\end_layout
+
+\begin_layout Standard
+Finalement, nous Ã©laborerons sur les menaces Ã  la validitÃ© de l'Ã©tude, suite
+ Ã  quoi nous procÃ©derons Ã  une interprÃ©tation qualitative des rÃ©sultats
+ observÃ©s.
+\end_layout
+
+\begin_layout Section
+Description de l'Ã©tude
+\end_layout
+
+\begin_layout Subsection
+Objet
+\end_layout
+
+\begin_layout Standard
+L'objet de cette Ã©tude de cas est l'impact des mesures orientÃ©es objet extraites
+ de code source, telles que prÃ©sentÃ©es par Jureczko et Spinellis
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Jur10"
+
+\end_inset
+
+, sur le nombre de dÃ©faillances recensÃ©es par classe d'un systÃ¨me, une sous-cara
+ctÃ©ristique importante de la fiabilitÃ©.
+ 
+\end_layout
+
+\begin_layout Standard
+En effet, nous pensons que plusieurs mÃ©triques orientÃ©es objet ont un impact
+ direct ou indirect sur la fiabilitÃ© d'un systÃ¨me.
+\end_layout
+
+\begin_layout Standard
+Nous avons choisi le nombre de dÃ©faillances comme variable dÃ©pendante puisque
+ cette notion de qualitÃ© est directement liÃ©e Ã  la fiabilitÃ© d'un systÃ¨me.
+ La fiabilitÃ© est une caractÃ©ristique cruciale d'un systÃ¨me, peu importe
+ le domaine d'activitÃ©s auquel se rapport ce systÃ¨me.
+ Il est donc essentiel d'Ã©tudier l'influence du design logiciel sur celle-ci.
+\end_layout
+
+\begin_layout Subsection
+But
+\end_layout
+
+\begin_layout Standard
+Le but de cette Ã©tude est d'Ã©tablir des relations claires entre les mÃ©triques
+ orientÃ©es objet choisies, soit:
+\end_layout
+
+\begin_layout Standard
+WMC, DIT, NOC, CBO, RFC, LCOM, CA, CE, NPM, LCOM3, LOC, DAM, MOA, MFA, CAM,
+ IC, CBM, AMC, MAX_CC, AVG_CC.
+ 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "def. Metriques"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+et le nombre de dÃ©faillances par classe (BUG), que ce soit par l'utilisation
+ de modÃ¨les univariÃ©s ou multivariÃ©s.
+\end_layout
+
+\begin_layout Standard
+Notre hypothÃ¨se nulle est que toutes les classes d'un systÃ¨me ayant les
+ mÃªmes meusres orientÃ©es objet prÃ©sentent le mÃªme nombre de dÃ©faillances
+ par classe.
+\end_layout
+
+\begin_layout Standard
+Nous voulons ensuite nous servir de modÃ¨les de prÃ©dictions pour attester
+ de ces relations.
+ Nous ferons aussi une interprÃ©tation qualitative des rÃ©sulats observÃ©s
+ basÃ©e sur le code source analysÃ© afin de dÃ©terminer si les dÃ©veloppeurs
+ ont fait cas des liens entre les mesures orientÃ©es objet et le nombre de
+ dÃ©faillances par classe, d'une version Ã  l'autre.
+\end_layout
+
+\begin_layout Standard
+Une fois ces relations Ã©tablies, nous pourrons nous servir de ces derniÃ¨res
+ pour concevoir un corpus de recommandations afin d'amÃ©liorer l'efficacitÃ©
+ de dÃ©veloppement de projets futurs et de corriger la fiabilitÃ© de projets
+ existants.
+\end_layout
+
+\begin_layout Subsection
+CritÃ¨res de qualitÃ©
+\end_layout
+
+\begin_layout Standard
+La structure analytique de cette Ã©tude se base sur les recommandations prÃ©sentÃ©e
+s dans l'article de Lionel C.
+ Briand et JÃ¼rgen WÃ¼st 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "BW02"
+
+\end_inset
+
+ qui cerne bien les diffÃ©rentes qualitÃ©s requises pour attester de la lÃ©gitimitÃ©
+ d'un modÃ¨le de qualitÃ©.
+ 
+\end_layout
+
+\begin_layout Standard
+DiffÃ©rents procÃ©dÃ©s seront appliquÃ©s afin de maximiser la qualitÃ© des rÃ©sultats
+ et de leur interprÃ©tation.
+ Nous commencerons pas une Ã©limination des observations aberrantes, puis
+ nous effectuerons une normalisation des donnÃ©es pour en faciliter l'analyse
+ et finalement, nous utiliserons des modÃ¨les de prÃ©diction, tel que les
+ rÃ©seaux de neuronnes, pour procÃ©der Ã  une vÃ©rification minutieuse des relations
+ observÃ©es entre la variable dÃ©pendante, soit le nombre de dÃ©faillances
+ par classe, et les variables indÃ©pendantes.
+ 
+\end_layout
+
+\begin_layout Subsection
+Point de vue
+\end_layout
+
+\begin_layout Standard
+Nous voulons, par cette prÃ©sente Ã©tude, parfaire les procÃ©dÃ©s de design
+ logiciel du point de vue du dÃ©veloppeur, afin de d'amÃ©liorer la fiabilitÃ©
+ du systÃ¨me et par consÃ©quent, faciliter :
+\end_layout
+
+\begin_layout Enumerate
+l'efficacitÃ© de dÃ©veloppement du logiciel
+\end_layout
+
+\begin_layout Enumerate
+l'utilisation du logiciel par l'utilisateur
+\end_layout
+
+\begin_layout Standard
+Dans cette prÃ©sente Ã©tude, nous ferons notre analyse sur un logiciel servant
+ au dÃ©veloppement logiciel.
+ Il est donc essentiel d'assurer une certaine fiabilitÃ© aux utilisateurs,
+ puisque celle-ci se rÃ©percute aux logiciels qui l'utilisent.
+\end_layout
+
+\begin_layout Subsection
+Environnement
+\end_layout
+
+\begin_layout Standard
+Le logiciel sur lequel est basÃ© cette Ã©tude est 
+\emph on
+Ant, 
+\emph default
+un logiciel d'automatisation de tÃ¢ches liÃ©es au dÃ©veloppement logiciel,
+ conÃ§u par 
+\emph on
+Apache Software Foundation
+\emph default
+ et Ã©crit en Java.
+ La derniÃ¨re version Ã  ce jour est la version 1.9.0 (7 mars 2013)..
+\end_layout
+
+\begin_layout Standard
+Nous utiliserons les mesures de 
+\emph on
+Ant
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\emph on
+http://ant.apache.org
+\end_layout
+
+\end_inset
+
+
+\emph default
+ compilÃ©es sur 
+\emph on
+promisedata
+\emph default
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://code.google.com/p/promisedata/source/browse/trunk/#trunk%2Fdefect
+\end_layout
+
+\end_inset
+
+, une base de donnÃ©es de mesures extraites de diffÃ©rents systÃ¨mes.
+ Nous avons choisi les donnÃ©es 
+\emph on
+Ant-1.x
+\emph default
+ puisqu'elles sont trÃ¨s complÃ¨tes et contiennent le nombre de dÃ©faillances
+ par classe, soit la notion de qualitÃ© que nous avons choisi pour cette
+ Ã©tude de cas.
+\end_layout
+
+\begin_layout Standard
+Nous avons dÃ©cidÃ© de prÃ©senter les analyses de la version 1.7 pour la majeure
+ partie de l'Ã©tude, puisqu'elle est la plus rÃ©cente disponible, qu'elle
+ contient le plus de classes et qu'elle offre donc un plus grand bassin
+ de donnÃ©es.
+ En effet, les versions prÃ©cÃ©dentes sont redondantes et moins intÃ©ressantes
+ pour ce qui est de l'analyse quantitative.
+ Par contre, afin de pouvoir procÃ©der Ã  une analyse qualitative Ã©volutive
+ du dÃ©veloppement, nous utiliserons aussi les versions 1.5 et 1.6.
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "Interpretation"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Le code source qui servira Ã  l'interprÃ©tation des rÃ©sultats est extrait
+ du rÃ©pertoire 
+\emph on
+git
+\emph default
+ associÃ©
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://github.com/apache/ant
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Section
+SystÃ¨mes Ã  l'Ã©tude
+\end_layout
+
+\begin_layout Section
+Analyse
+\end_layout
+
+\begin_layout Subsection
+Mesures descriptives
+\end_layout
+
+\begin_layout Standard
+Les mesures utilisÃ©es pour cette Ã©tude sont les suivantes: 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset label
+LatexCommand label
+name "def. Metriques"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+WMC Le nombre de mÃ©thodes d'une classe.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CK94"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+DIT La profondeur de l'arbre d'hÃ©ritage d'une classe.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CK94"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+NOC Le nombre de sous-classes d'une classe.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CK94"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+CBO Le couplage d'une classe avec les autres classes d'un systÃ¨me.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CK94"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+RFC La somme du nombre de mÃ©thodes appelÃ©s par les methodes de la classe
+ et du nombre de methodes de la classe.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CK94"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+LCOM La diffÃ©rence entre le nombre de paires de mÃ©thodes d'une classe qui
+ n'accÃ¨dent pas aux mÃªmes attributs et le nombre de paires de mÃ©thodes qui
+ le font.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CK94"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+CA Le nombre de classes qui utilisent une classe.
+ Aussi connu comme 
+\emph on
+fan in.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "MR94"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+CE Le nombre de classes utilisÃ©es par une classe.
+ Aussi connu comme 
+\emph on
+fan out.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "MR94"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+NPM Le nombre de mÃ©thodes publiques d'une classe 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "BD02"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+LCOM3 Une autre mesure de la cohÃ©sion, variant entre 0 et 2, donnees par
+ 
+\begin_inset Formula $\dfrac{(\nicefrac{1}{\alpha}\sum_{j=1}^{\alpha}\mu(A_{j}))-m}{1-m}$
+\end_inset
+
+, ou 
+\begin_inset Formula $m$
+\end_inset
+
+ est le nombre de mÃ©thodes, a est le nombre d'attributs et 
+\begin_inset Formula $\mu(A)$
+\end_inset
+
+ est le nombre de mÃ©thodes qui accÃ¨dent Ã  lattribut 
+\begin_inset Formula $A$
+\end_inset
+
+.
+\begin_inset CommandInset citation
+LatexCommand cite
+key "HB96"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+LOC Le nombre de lignes de code d'une classe.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+DAM Le ratio du nombre d'attributs privÃ©s sur le nombre total d'attributs
+ d'une classe.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "BD02"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+MOA Le nombre de 
+\emph on
+class fields
+\emph default
+ d'une classe dont le type est dÃ©fini par le dÃ©veloppeur.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "BD02"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+MFA Le ratio du nombre de mÃ©thodes hÃ©ritÃ©es par une classe sur le nombre
+ total de mÃ©thodes accessible par les mÃ©thodes dune classe.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "BD02"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+CAM La somme du nombre de types diffÃ©rents de paramÃ¨tres de chaque mÃ©thode
+ d'une classe divisÃ©e par la multiplication du nombre diffÃ©rent de types
+ de paramÃ¨tres pour toutes les mÃ©thode de la classe et du nombre de mÃ©thodes
+ de la classe.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "BD02"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+IC Le nombre de classes parentes avec lesquelles la classe est couplÃ©e.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "TKC99"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+CBM Le nombre totale de mÃ©thodes dÃ©finies ou redÃ©finies dans la classe auxquelle
+s sont couplÃ©es les mÃ©thodes.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "TKC99"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+AMC La taille moyenne des mÃ©thodes d'une classe.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "TKC99"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+MAX_CC La complexitÃ© cyclomatique de McCabe maximale d'une classe.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "MC76"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+AVG_CC La complexitÃ© cyclomatique de McCabe moyenne d'une classe.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "MC76"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Voici le rÃ©sumÃ© des mesures rÃ©coltÃ©es pour la version 1.7 de 
+\emph on
+Ant.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename IMAGES/summary_ant17_1.png
+	scale 57
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Summary-a, donnÃ©es Ant 1.7
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename IMAGES/summary_ant17_2.png
+	scale 57
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Summary-b, donnÃ©es Ant 1.7
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L'analyse des composantes principales (
+\emph on
+PCA
+\emph default
+) nous donne une idÃ©e des relations entre les variables.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename IMAGES/PCA_ant17_RAW.png
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+PCA, donnÃ©es Ant-1.7 RAW
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Identification des observations aberrantes
+\end_layout
+
+\begin_layout Standard
+On remarque, par l'observation des 
+\emph on
+box plots
+\emph default
+ pour chacune des versions, que plusieurs mesures sont trÃ¨s mals distribuÃ©es
+ et prÃ©sentes des donnÃ©es aberrantes.
+ Il sera donc nÃ©cessaire d'Ã©liminer ces observations aberrantes afin d'obtenir
+ des rÃ©sultats plus intÃ©ressants Ã  nos analyses subsÃ©quentes.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename IMAGES/boxplot_ant17_1.png
+	scale 35
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Boxplot-a, donnÃ©es Ant 1.7
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename IMAGES/boxplot_ant17_2.png
+	scale 35
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Boxplot-b, donnÃ©es Ant 1.7
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Description des manipulations appliquÃ©es aux variables
+\end_layout
+
+\begin_layout Standard
+En observant les rÃ©sultats aux tests de 
+\emph on
+Shapiro
+\emph default
+, on remarque que nos donnÃ©es ne sont pas toutes distribuÃ©es adÃ©quatement.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename IMAGES/ant17RAWShapiro.png
+	scale 57
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Shapiro, donnÃ©es Ant 1.7
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Avant la normalisation des donnÃ©es, nous procÃ©dons Ã  l'Ã©limination des observati
+ons aberrtantes en utilisant un 
+\emph on
+box plot
+\emph default
+.
+ Remarquez l'utilisation des valeurs 0.01 et 0.99.
+ En effet, nous avons remarquÃ© qu'une utilisation des valeurs habituelles,
+ soit 0.25 et 0.75, vient fausser drastiquement nos donnÃ©es, en Ã©liminant,
+ par exemple, les nombre de dÃ©faillances supÃ©rieurs Ã  zÃ©ro.
+ De plus, nous avons remarquÃ© une bien meilleure corrÃ©lation en limitant
+ l'Ã©limination des valeurs aberrantes.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},language=R"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+remove_outliers <- function(x, na.rm = TRUE, ...) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	qnt <- quantile(x, probs=c(.01, .99), na.rm = na.rm, ...)
+\end_layout
+
+\begin_layout Plain Layout
+
+	H <- 1.5 * IQR(x, na.rm = na.rm)
+\end_layout
+
+\begin_layout Plain Layout
+
+	y <- x   y[x < (qnt[1] - H)] <- NA
+\end_layout
+
+\begin_layout Plain Layout
+
+	y[x > (qnt[2] + H)] <- NA   y } 
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ant17 <- apply(ant17, 2, function(row){remove_outliers(row)})
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Puis, nous normalisons nos donnÃ©es avec un logarithme, en additionnant la
+ valeur de un prÃ©alablement, afin d'Ã©viter les zÃ©ros et l'obtention de valeurs
+ 
+\begin_inset Formula $-\infty$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},language=R"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+ant17NORM <- apply(ant17, 2, function(row){log(row+1)})
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+AprÃ¨s l'application des manipulations, on remarque une bien meilleures distribut
+ion des valeurs.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename IMAGES/boxplot_ant17_norm_1.png
+	scale 35
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Boxplot, donnÃ©es normalisÃ©es Ant 1.7-a
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename IMAGES/boxplot_ant17_norm_2.png
+	scale 35
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Boxplot, donnÃ©es normalisÃ©es Ant 1.7-b
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+En effet, le test de 
+\emph on
+Shapiro
+\emph default
+ confirme que la distribution des donnÃ©es s'approche davantage de l'hypothÃ¨se
+ nulle.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename IMAGES/Shapiro17NORM.png
+	scale 57
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Shapiro, donnÃ©es normalisÃ©es Ant 1.7
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+PrÃ©sentation des modÃ¨les univariÃ©s
+\end_layout
+
+\begin_layout Standard
+On commence par une analyse des corrÃ©lations de 
+\emph on
+Pearson
+\emph default
+ entre le nombre de dÃ©faillances et les mesures cumulÃ©es.
+ Le calcul des corrÃ©lations de 
+\emph on
+Spearman
+\emph default
+ ne donne pas de prÃ©cisions sur le type de relation entre la variable dÃ©pendante
+ et les variables indÃ©pendantes, il permet une classification simple des
+ mÃ©triques qui servira pour la construction de modÃ¨les multivariÃ©s.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename IMAGES/ANT17_COR_NORM.png
+	scale 60
+	BoundingBox 0bp 0bp 303bp 164bp
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+CorrÃ©lations de Pearson, donnÃ©es normalisÃ©es Ant 1.7
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Nous avons dÃ©cidÃ© de ne prendre en considÃ©ration que les corrÃ©lations oÃ¹
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+\align center
+\begin_inset Formula $\mid\alpha\mid>0.35$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+Nous Ã©liminons donc les mÃ©triques suivantes pour la construction des modÃ¨les
+ multivariÃ©s:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+MÃ©triques Ã©cartÃ©es
+\end_layout
+
+\begin_layout Standard
+DIT, NOC, CA, LCOM3, DAM, MFA, IC, CBM, AMC, AVG_CC
+\end_layout
+
+\begin_layout Standard
+et nous gardons celles-ci:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+MÃ©triques gardÃ©es
+\end_layout
+
+\begin_layout Standard
+WMC, CBO, RFC, LCOM, CE, NPM, LOC, MOA, CAM, MAX_CC
+\end_layout
+
+\begin_layout Standard
+\noindent
+En effet, en effectuant une analyse des composantes principales des donnÃ©es
+ normalisÃ©es, on remarque que la majoritÃ© des variables ecartÃ©es sont celles
+ dont les composantes sont ortogonales Ã  la composante du nombre de defaillances
+ (
+\emph on
+BUG
+\emph default
+).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename IMAGES/ACP.png
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+PCA, donnÃ©es normalisÃ©es Ant-1.7
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Voici le gaphique des rÃ©gressions linÃ©aires afin de mieux visualiser les
+ liens entre le nombre de dÃ©faillances par classe et les mesures extraites.
+ Tout comme le calcul des corrÃ©lations de 
+\emph on
+Spearman
+\emph default
+, la simple rÃ©gression linÃ©aire ne sert qu'Ã  avoir un simple aperÃ§u des
+ relations entre la variable dÃ©pendante et les variable indÃ©pendantes.
+ En effet, nous aurions pu faire une rÃ©gression de degrÃ© diffÃ©rent afin
+ de mieux Ã©pouser la distribution des donnÃ©es, mais lÃ  n'Ã©tait pas l'objectif.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename Rplot.pdf
+	scale 75
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+RÃ©gressions linÃ©aires, Ant-1.7
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Nous utilisons ensuite 
+\emph on
+Weka
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\emph on
+http://www.cs.waikato.ac.nz/ml/weka/
+\end_layout
+
+\end_inset
+
+
+\emph default
+ pour tester les modÃ¨les univariÃ©s retenus.
+ Nous fesons usage de deux outils de classifications, soit les rÃ©seaux de
+ neuronnes
+\begin_inset CommandInset citation
+LatexCommand cite
+key "LMMP59"
+
+\end_inset
+
+ et les arbres de dÃ©cision (
+\emph on
+J48
+\emph default
+).
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Q93"
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+% BADR %%
+\end_layout
+
+\begin_layout Plain Layout
+
+%TEST DES MODELES UNIVARIES
+\end_layout
+
+\begin_layout Plain Layout
+
+%Expliquer ce quon fait avec Weka(cross validation, neural network, J48),
+ et parler du fait qu'on change le nombre d'erreurs pour 1 et 0!
+\end_layout
+
+\begin_layout Plain Layout
+
+%Expliquer ce quest le forward selection process (voir 3.4.1 Stepwise selection
+ process, dans http://squall.sce.carleton.ca/people/briand/pubs/AdvComp-Briand-Wues
+t.pdf)
+\end_layout
+
+\begin_layout Plain Layout
+
+%Presenter les differents modeles de prediction quon a choisi.
+\end_layout
+
+\begin_layout Plain Layout
+
+%Les expliquer, en parlant du f-measure, du pourcentage de faux positif
+ et du pourcentage d'erreurs predites
+\end_layout
+
+\begin_layout Plain Layout
+
+%Conclure en disant quels sont les modeles UNIVARIES les plus fiables.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+
+\lang english
+\begin_inset Graphics
+	filename IMAGES/Weka_univarie.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\lang english
+\begin_inset Caption
+
+\begin_layout Plain Layout
+
+\lang english
+Classifications des mesures avec J48 et MLP
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+Weka est un espace de travail qui contient des outils de visualisation et
+ dâ€™algorithme pour analyser des donnÃ©es et faire des modÃ©lisations prÃ©dictives.
+ Au sein de cette Ã©tude nous allons utiliser deux mÃ©thodes, Lâ€™arbre de dÃ©cision
+ J48 et le rÃ©seau neural formel perceptron multi couches, nous appliquerons
+ ces derniers sur nos donnÃ©es et essayerons dâ€™en soustraire les prÃ©dictions
+ adÃ©quates pour chacune des variables choisis ci-dessus.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+Tout dâ€™abord, avant mÃªme de commencer lâ€™analyse, nous avons dÃ©cidÃ© dâ€™ajouter
+ une variable qui permettra de mieux discerner la prÃ©sence des bugs.
+ La variable en question se nomme Â« bugTF Â», celle-ci prend la valeur 0
+ si le cas ne contient pas dâ€™erreurs sinon 1.
+ On a remarquÃ© que les rÃ©sultats dâ€™analyse sont plus explicatifs et donnent
+ plus de sens dans les classifications quâ€™en utilisant les rÃ©sultats de
+ la variable Â« bug Â» aprÃ¨s lâ€™avoir normalisÃ©.
+ En effet, les catÃ©gories de classification sont plus qualitatives lors
+ de lâ€™extraction des faux positifs.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+Ensuite, nous avons choisi de faire la validation croisÃ©e sur 10 plis, câ€™est-Ã -d
+ire de dÃ©couper les donnÃ©es en 10 parties, faire 10 expÃ©riences en utilisant,
+ Ã  tour de rÃ´le, une partie comme test et les 9 autres parties pour lâ€™entraineme
+nt.
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+Concernant les taux de classification nous avons dÃ©cidÃ© dâ€™utiliser les faux
+ positifs, faux nÃ©gatifs et le F-measures, ce dernier combine la prÃ©cision
+ et rappel.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+En gÃ©nÃ©ral, dâ€™aprÃ¨s les rÃ©sultats recueillis des deux algorithmes, on remarque
+ que pour la classe Â« False Â» (pas de bug) il nâ€™existe quasiment pas de
+ faux positives.
+ Les faux nÃ©gatives sont gÃ©nÃ©ralement faible si cela ne sâ€™approche pas du
+ milieu pour la majoritÃ© des classes.
+ Cependant pour la classe Â«TrueÂ» câ€™est totalement le contraire! Nous remarquons
+ quand mÃªme quelques exceptions de quelques mesures qui sortent des rÃ©sultats
+ dÃ©cris en haut.
+ Par exemple LOC, RFC et CAM sont mal classÃ©s dans les faux nÃ©gatives de
+ la classe Â« False Â» : 0.41, 0.63 et 0.53 respectivement.
+ Tandis que pour la classe Â« True Â» ces mÃªmes attributs sont les mieux classÃ©s
+ comparÃ©s aux autres mesures.
+ En regardant le tableau des corrÃ©lations et les attributs quâ€™on a remarquÃ©s
+ dans la classification, lâ€™existence dâ€™une relation entre eux est Ã©vidente.
+\end_layout
+
+\begin_layout Subsection
+PrÃ©sentation des modÃ¨les multivariÃ©s
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+% BADR %%
+\end_layout
+
+\begin_layout Plain Layout
+
+%Creer des modeles multivaries par forward selection process
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\end_layout
+
+\begin_layout Plain Layout
+
+%-choisir une variable
+\end_layout
+
+\begin_layout Plain Layout
+
+%-choisir la plus significative des autres (meilleure correlation spearman
+ rank)
+\end_layout
+
+\begin_layout Plain Layout
+
+%-Si l'ajout descend la precision, ou le R-squared (http://en.wikipedia.org/wiki/C
+oefficient_of_determination), l'enlever
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\end_layout
+
+\begin_layout Plain Layout
+
+%Expliquer ce quon fait avec Weka(cross validation, neural network, J48),
+ et parler du fait qu'on change le nombre d'erreurs pour 1 et 0!
+\end_layout
+
+\begin_layout Plain Layout
+
+%Expliquer ce quest le forward selection process (voir 3.4.1 Stepwise selection
+ process, dans http://squall.sce.carleton.ca/people/briand/pubs/AdvComp-Briand-Wues
+t.pdf)
+\end_layout
+
+\begin_layout Plain Layout
+
+%Presenter les differents modeles de prediction quon a choisi.
+\end_layout
+
+\begin_layout Plain Layout
+
+%Les expliquer, en parlant du f-measure, du pourcentage de faux positif
+ et du pourcentage d'erreurs predites
+\end_layout
+
+\begin_layout Plain Layout
+
+%Conclure en disant quels sont les modeles multivaries les plus fiables.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+
+\lang english
+\begin_inset Graphics
+	filename IMAGES/ANT17_COR_SPEARMAN.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\lang english
+\begin_inset Caption
+
+\begin_layout Plain Layout
+CorrÃ©lations de Spearman, donnÃ©es normalisÃ©es Ant 1.7
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+La procÃ©dure quâ€™on utilisera pour les prÃ©dictions multivariÃ©s est le Â« Stepwise
+ selection process Â».
+ La selection de variables se fera avec le Â«forward selection Â».
+ Le principe consiste Ã  choisir la variable la plus significative du modÃ¨le,
+ on lui ajoute aprÃ¨s une autre variable et teste si cette derniÃ¨re baisse
+ la signification, on rÃ©pÃ¨te cette Ã©tape avec toutes les autres variables
+ jusquâ€™Ã  ce quâ€™on ne voit plus dâ€™amÃ©liorations.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+Les donnÃ©es ci-dessus contiennent les corrÃ©lations Spearman de chacune des
+ mesures avec la variable dÃ©pendante Â« Bug Â».
+ Cela nous permettra de choisir la mesure qui a une plus grande corrÃ©lation
+ et initier la construction du modÃ¨le multivariÃ©.
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+On remarque que LOC contient la plus grande valeur.
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+Le tableau ci dessous montre les variables qu'on a ajoutÃ© dependemment de
+ l'augmentation de la valeur R-Square.
+ Cette derniÃ¨re contient le coefficient des corrÃ©lations multiples qui est
+ comprise entre 0 et 1.
+ Elle peut aussi se dÃ©finir comme le carrÃ© dâ€™Ã©chantillons du coefficient
+ de la corrÃ©lation entre les rÃ©sultats et leurs valeurs prÃ©dits.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+
+\lang english
+\begin_inset Graphics
+	filename IMAGES/ant17_rsquare.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\lang english
+\begin_inset Caption
+
+\begin_layout Plain Layout
+
+\lang english
+Les variables choisis avec leurs R-Square
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+AprÃ¨s avoir ajoutÃ© la troisiÃ¨me variable, le R-square reste stable et ne
+ change plus de valeur mÃªme si on ajoute les autres variables.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+
+\lang english
+\begin_inset Graphics
+	filename IMAGES/Weka_multivarie.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\lang english
+\begin_inset Caption
+
+\begin_layout Plain Layout
+
+\lang english
+Classification des mesures avec selection de variables, J48 et MLP
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+Comme pour lâ€™analyse avec le modÃ¨le univariÃ©, on utilise les classifications
+ avec les algorithmes J48 et MLP, une validation croisÃ©e Ã  10 plis, ainsi
+ que les rÃ©sultats de mesures TP FP et F-measures.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+On a commencÃ© avec la mesure LOC vu que câ€™est lâ€™attribut qui contient les
+ meilleurs rÃ©sultats de la classification.
+ La variable qui a permis dâ€™augmenter un petit peu les faux positifs/nÃ©gatifs
+ est RFC puis finalement on a ajoutÃ© la variable WMC qui a permis dâ€™amÃ©liorer
+ un petit peu le F-measure.
+ 
+\end_layout
+
+\begin_layout Section
+Menaces Ã  la validitÃ©
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+% FELIX
+\end_layout
+
+\begin_layout Plain Layout
+
+%Les resultats semblent valide puisque comparable a http://squall.sce.carleton.ca/p
+eople/briand/pubs/AdvComp-Briand-Wuest.pdf 4.1.1 pour les univaries
+\end_layout
+
+\begin_layout Plain Layout
+
+%Cross system application (5.5)
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Plusieurs caractÃ©ristiques de l'environnement et des procÃ©dÃ©s utilisÃ©s menacent
+ la validitÃ© des rÃ©sultats obtenus.
+\end_layout
+
+\begin_layout Standard
+PremiÃ¨rement, on ne sait pas quelle technique a Ã©tÃ© utilisÃ©e pour le recensement
+ du nombre de dÃ©faillances par classe.
+ Elles peuvent avoir Ã©tÃ© comptabilisÃ©es durant la durÃ©e totale de la phase
+ de dÃ©veloppement ou durant une durÃ©e arbitraire ou encore durant une sÃ©rie
+ ponctuelle de tests.
+ Ce manque d'informations nous empÃªche de cerner prÃ©cisÃ©ment l'environnement
+ et donc limite la profondeur de notre analyse qualitative qui suivra.
+ 
+\end_layout
+
+\begin_layout Standard
+DeuxiÃ¨ment, la taille du bassin de donnÃ©es Ã©tudiÃ©es vient entraver la lÃ©gitimitÃ©
+ de nos modÃ¨le univariÃ©s et multivariÃ©s.
+ Il aurait Ã©tÃ© intÃ©ressant d'effectuer nos mesures sur un ensemble de projets
+ diffÃ©rents, de tailles diffÃ©rentes, afin de dÃ©contextualiser les rÃ©sultats
+ obtenus et d'obtenir des modÃ¨les de prÃ©diction gÃ©nÃ©ralisÃ©s.
+\end_layout
+
+\begin_layout Standard
+TroisiÃ¨mement, nous avons utilisÃ© les mÃªmes donnÃ©es pour l'entraÃ®nement
+ et la validation de nos modÃ¨les de prÃ©dictions.
+ Les donnÃ©es Ã©tant contextualisÃ©es, on ne peut Ãªtre certain encore une fois
+ de la validitÃ© des modÃ¨les retenus.
+ En effet, il se peut qu'il existe des 
+\emph on
+patterns
+\emph default
+ de dÃ©veloppement qui sont propres au systÃ¨me analysÃ©, ce qui menace la
+ validitÃ© des rÃ©sultats obtenus.
+\end_layout
+
+\begin_layout Standard
+QuatriÃ¨mement, pour ce qui est des modÃ¨les univariÃ©s, nous avons fait usage
+ que de simples corrÃ©lations de 
+\emph on
+Pearson
+\emph default
+ pour certifier des relations entre les nombres de dÃ©faillances et les variables
+ indÃ©pendantes.
+ Ce n'est pas la mÃ©thode la plus prÃ©cise, puisque les distributions des
+ mesures ne sont pas toutes linÃ©aires, mais c'est tout de mÃªme efficace
+ pour Ã©carter rapidement les variables indÃ©pendantes jugÃ©es incorrÃ©lÃ©es.
+ 
+\end_layout
+
+\begin_layout Section
+InterprÃ©tation des rÃ©sultats
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset label
+LatexCommand label
+name "Interpretation"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+% BADR %
+\end_layout
+
+\begin_layout Plain Layout
+
+%Parler du code source
+\end_layout
+
+\begin_layout Plain Layout
+
+%Parlers des meilleurs modeles de prediction et parler en quoi les developpeurs
+ ont fait des modifs dune version a lautre en donnant des exemples concrets
+ du code source, par rapport aux modeles de predictions 
+\end_layout
+
+\begin_layout Plain Layout
+
+%Parler des modifications futures possible pour davantage ameliorer le code
+ source, donner des exemples concrets
+\end_layout
+
+\end_inset
+
+La premiÃ¨re remarque quâ€™on pourrait faire lors du parcours du code est la
+ grande diffÃ©rence de nombre de classe pour chacune des versions :
+\end_layout
+
+\begin_layout Standard
+- Version 1.5 : 293 classes 
+\end_layout
+
+\begin_layout Standard
+- Version 1.6 : 351 classes 
+\end_layout
+
+\begin_layout Standard
+- Version 1.7 : 745 classes 
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+Le tableau ci-dessous nous permettra de nous donner une idÃ©e gÃ©nÃ©rale des
+ mesures qui sont le plus corrÃ©lÃ© avec la variable dÃ©pendante Â« bug Â» et
+ cela pour chacune des versions.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+
+\lang english
+\begin_inset Graphics
+	filename IMAGES/comparaison_cor.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Comparaison des CorrÃ©lations entre version 1.5 1.6 et 1.7
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+Prenons l'exemple de la mesure LOC, on remarque que dans la version 1.6 la
+ coorÃ©lation est la plus haute comparÃ© aux autres versions, voyons voir
+ la moyenne des nombres de lignes du code pour chacune des versions pour
+ vÃ©rifier l'existence d'une relation:
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+
+\lang english
+\begin_inset Graphics
+	filename IMAGES/summary_loc.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\lang english
+\begin_inset Caption
+
+\begin_layout Plain Layout
+
+\lang english
+Summary des LOC pour chacune des versions
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+On remarque que pour la version 1.6 (mod2), la moyenne est plus importante,
+ aussi que les developpeurs ont essayer de corriger leurs coups dans la
+ derniere version ce qui a permis non pas juste de reduire la moyenne des
+ lignes de code mais aussi la corrÃ©lation.
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+Passons maintenant au RFC, on remarque une large augmentation de corrÃ©lation
+ dans la version 1.6, vÃ©rifions cela avec les rÃ©sumÃ©s:
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+
+\lang english
+\begin_inset Graphics
+	filename IMAGES/summary_wmc.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\lang english
+\begin_inset Caption
+
+\begin_layout Plain Layout
+
+\lang english
+Summary des WMC pour chacune des versions
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+La concordance est pas mal adÃ©quate entre les moyennes des rÃ©sumÃ©s et leurs
+ corrÃ©lations rÃ©spÃ©ctives.
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+On aura compris que les exemples citÃ©s en haut dÃ©crivent bien la relation
+ entre les mesures et leurs corrÃ©lations.
+ Maintenant si on explore encore plus le code source de chacune des versions.
+ Vu le nombre et la complÃ©xitÃ© des classes de chacune des versions sont
+ assez importantes, on ne pourra pas analyser complÃ©tement la totalitÃ© des
+ fichiers mais on prendera les mesures les plus pertinants.
+ Le premier fichier qu'on a ouvert sur les trois versions est 
+\emph on
+org.apache.tools.ant.task.java, 
+\emph default
+pour la premiÃ¨re version le LOC = 381, deuxiÃ¨me = 508 et la derniÃ¨re contient
+ 481 lignes de codes.
+ Si on reprend l'exemple de WMC, V1.5 = 23 V1.6 = 30 et V1.7 = 29.
+\end_layout
+
+\begin_layout Standard
+
+\lang english
+En prenant en compte ces chiffres, on pourra dÃ©jÃ  avoir une idÃ©e assez objective
+ sur la situation des trois versions, en ajoutant plus de classes de la
+ version 1.5 Ã  1,6 les diffÃ©rents mesures ont augmentÃ© aussi ainsi que leurs
+ associations avec les bugs.
+ Cependant en passant Ã  la version 1.7, mÃªme si le nombre de classes est
+ devenu encore plus important, les developpeurs ont reduit considÃ©rablement
+ la majoritÃ©e des aspects qu'on a mesurÃ© tout on long de notre Ã©tude, ce
+ qui a induit Ã  baisser aussi la corrÃ©lation avec les bugs.
+ 
+\end_layout
+
+\begin_layout Section
+Conclusion
+\end_layout
+
+\begin_layout Standard
+Cette Ã©tude de cas nous a permis de d'invalider notre hypothÃ¨se nulle comme
+ quoi toutes les classes ayant les mÃªmes mesures orientÃ©es objets prÃ©sentent
+ le mÃªme nombre de dÃ©faillances et de fournir une hypothÃ¨se alternative
+ intÃ©ressante, soit que 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+%BADR
+\end_layout
+
+\begin_layout Plain Layout
+
+%METTRE L'HYPOTHÃˆSE ALTERNATIVE
+\end_layout
+
+\end_inset
+
+.
+ Cette Ã©tude nous a donc permis de cibler des sources potentielles de dÃ©faillanc
+es dans les classes du projet 
+\emph on
+Ant
+\emph default
+.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+%BADR
+\end_layout
+
+\begin_layout Plain Layout
+
+%RÃ©sumer les observations faites sur le projet ANT
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Les rÃ©sultats obtenus peuvent Ãªtre gÃ©nÃ©ralisÃ©s Ã  d'autres projets orientÃ©s
+ objets, or il faut toujours s'assurer de prendre le contexte en considÃ©ration.
+ En effet, les prÃ©dictions pourraient s'Ã©carter drastiquement de la rÃ©alitÃ©
+ dans certains cas puisque les mesures sont toujours fortement reliÃ©es au
+ contexte.
+ 
+\end_layout
+
+\begin_layout Standard
+Il aurait Ã©tÃ© intÃ©ressant de rÃ©pÃ©ter l'expÃ©rience avec davantage de donnÃ©es
+ et de tester les modÃ¨les de prÃ©diction sur des ensembles de donnÃ©es de
+ test diffÃ©rents des ensembles de donnÃ©es d'entraÃ®nement afin de lÃ©gitimer
+ davantage nos modÃ¨les.
+ Or, nous sommes satisfaits des rÃ©sulats que nous avons obtenus, puisqu'ils
+ se rapprochent des rÃ©sultats observÃ©s dans la plupart des Ã©tudes similaires.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "BW02"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+renewcommand{
+\backslash
+bibname}{R
+\backslash
+'ef
+\backslash
+'erences}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "references"
+options "bibtotoc,alpha"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
