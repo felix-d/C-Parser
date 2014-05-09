@@ -187,6 +187,7 @@ static int debug_line = 0;
 #else
 #define DEBUG_PRINT(e)
 #endif
+
 #ifdef stack_debug
 #define DEBUG_STACK(s) \
     print_stack(s);
@@ -194,6 +195,10 @@ static int debug_line = 0;
 #define DEBUG_STACK(s)
 #endif
 
+#define DEBUG_STRING(x) \
+  printf("%s->alloc:%ld\n", #x, x->alloc); \
+  printf("%s->util :%ld\n", #x, x->util); \
+  printf("%s->str  :%s\n", #x, x->str)
 
 /*-----------------------------------------------------------------------------
  *  FUNCTIONS DEFINITIONS
@@ -254,9 +259,9 @@ void ERROR(t_error e){
 void print_atomic_t_expr(t_expr* ex)
 {
 
-    if(ex->type==2)
-        printf(" %c ", *ex->_.nombre->str);
-    else if(ex->type==1)
+    if (ex->type==NOMBRE)
+        printf(" %s ", ex->_.nombre->str);
+    else if (ex->type==OP)
         printf(" %c ", ex->_.op.op->symbole);
 
 }
@@ -377,7 +382,7 @@ bool newString(char *s, long len, t_str **str, long line)
     return FALSE;
   }
 
-  ALLOC_TYPE(t_str, pTemp, sizeof(pTemp) + len + 1, __LINE__ ? !line : (int)line);
+  ALLOC_TYPE(t_str, pTemp, sizeof(pTemp) + len + 1, __LINE__ ? !line : (int)line);  // + 1 pour le terminateur null
 
   pTemp->str = (char *)(pTemp + 1);  // premier byte au delà de la struct t_str
 
@@ -389,7 +394,7 @@ bool newString(char *s, long len, t_str **str, long line)
   }
   else
   {
-    pTemp->util = 0;
+    pTemp->util = 0;  // caller should take care of ->util
   }
 
   pTemp->alloc = len + 1;
@@ -722,35 +727,42 @@ bool generer_expressions(t_expr *p)
             return FALSE;
 
         // SCHEME
-        // "(op gauche droite)" -->   + 5 -> "(+  )" + 1 -> "null terminator"
-        len = p->_.op.gauche->strScheme->util + p->_.op.droite->strScheme->util + 5 + 1;
+        // "(op gauche droite)" -->   + 5 -> "(+  )"
+        len = p->_.op.gauche->strScheme->util + p->_.op.droite->strScheme->util + 5;
         if (!newString(NULL, len, &p->strScheme, __LINE__))
           return FALSE;
-        sprintf(p->strScheme->str, "(%c %s %s)", p->_.op.op->symbole, p->_.op.gauche->strScheme->str, p->_.op.droite->strScheme->str);
+
+        p->strScheme->util = sprintf(p->strScheme->str, 
+                                     "(%c %s %s)", 
+                                     p->_.op.op->symbole, 
+                                     p->_.op.gauche->strScheme->str, 
+                                     p->_.op.droite->strScheme->str);
+        //DEBUG_STRING(p->strScheme);
 
 
         //POSTSCRIPT
-        // "gauche droite op" -->   + 5 -> "  xxx" + 1 -> "null terminator"
-        len = p->_.op.gauche->strPostScript->util + p->_.op.droite->strPostScript->util + 5 + 1;
+        // "gauche droite op" -->   + 5 -> "  xxx" 
+        len = p->_.op.gauche->strPostScript->util + p->_.op.droite->strPostScript->util + 5;
         if (!newString(NULL, len, &p->strPostScript, __LINE__))
           return FALSE;
-        sprintf(p->strPostScript->str, 
-                "%s %s %s", 
-                p->_.op.gauche->strPostScript->str, 
-                p->_.op.droite->strPostScript->str, 
-                postscript_op[p->_.op.op - liste_op]
-               );
+
+        p->strPostScript->util = sprintf(p->strPostScript->str, 
+                                         "%s %s %s", 
+                                         p->_.op.gauche->strPostScript->str, 
+                                         p->_.op.droite->strPostScript->str, 
+                                         postscript_op[p->_.op.op - liste_op]
+                                        );
+        //DEBUG_STRING(p->strPostScript);
+
+
 
         //C
         // p->strC
         ajouter_parentheses(p, p->_.op.gauche, &parenthese_gauche, p->_.op.droite, &parenthese_droite);
+        // "gaucheopdroite" -->   + 1 -> "x" + parenthèses optionnelles
+        len = p->_.op.gauche->strC->util + p->_.op.droite->strC->util + 1;
 
-        // "gaucheopdroite" -->   + 1 -> "x" + 1 -> "null terminator"
-        len = p->_.op.gauche->strC->util + p->_.op.droite->strC->util + 1 + 1;
-
-        if (!newString(NULL, len, &p->strC, __LINE__))
-          return FALSE;
-
+        // les parenthèses optionelles
         char *parenthese_gauche_str_gauche;
         char *parenthese_gauche_str_droite;
         if (parenthese_gauche)
@@ -778,17 +790,23 @@ bool generer_expressions(t_expr *p)
           parenthese_droite_str_gauche = "";
           parenthese_droite_str_droite = "";
         }
-        sprintf(p->strC->str, 
-                "%s%s%s%c%s%s%s",
-                parenthese_gauche_str_gauche,
-                p->_.op.gauche->strC->str, 
-                parenthese_gauche_str_droite,
-                p->_.op.op->symbole,
-                parenthese_droite_str_gauche,
-                p->_.op.droite->strC->str, 
-                parenthese_droite_str_droite
-               );
 
+        if (!newString(NULL, len, &p->strC, __LINE__))
+          return FALSE;
+
+        p->strC->util = sprintf(p->strC->str, 
+                                "%s%s%s%c%s%s%s",
+                                parenthese_gauche_str_gauche,
+                                p->_.op.gauche->strC->str, 
+                                parenthese_gauche_str_droite,
+                                p->_.op.op->symbole,
+                                parenthese_droite_str_gauche,
+                                p->_.op.droite->strC->str, 
+                                parenthese_droite_str_droite
+                               );
+        //DEBUG_STRING(p->strC);
+
+    
         //printf("%f %c %f\n", p->_.op.gauche->valeur, p->_.op.op->symbole, p->_.op.droite->valeur);
         if (!p->_.op.op->funct(p->_.op.gauche->valeur, p->_.op.droite->valeur, &p->valeur))
             return FALSE;
@@ -843,8 +861,9 @@ int main(int argc, char **argv)
 
     while(1){
 
-        printf("Expression? ");
         liberer_expr(&pASA);
+
+        printf("EXPRESSION? ");
 
         if (!lire_expr_postfix(s, stdin))
             continue; 
