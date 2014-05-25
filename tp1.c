@@ -164,13 +164,6 @@ static char *postscript_op[] = {"add", "sub", "mul", "div"};
 
 
 //Pre processing for error debugging
-#ifdef tp1_debug
-#define DEBUG_PRINT(x) \
-    rapporter_erreur(x, ctx->erreur, __LINE__); 
-#else
-#define DEBUG_PRINT(e)
-#endif
-
 #ifdef stack_debug
 #define DEBUG_STACK(s) \
     print_stack(s);
@@ -276,7 +269,7 @@ void affecter_erreur(t_error_id id, t_contexte_execution *ctx, int ligne) {
     }
 }
 
-
+#ifdef stack_debug
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  void print_t_expr(t_expr* ex)
@@ -310,7 +303,7 @@ void print_stack(t_pile_termes* p)
     }
     printf("\n");
 }
-
+#endif
 
 /* 
  * ===  FUNCTION  ======================================================================
@@ -667,7 +660,7 @@ bool convertir_postfix_en_ASA(t_contexte_execution *ctx)
             temp = (t_expr *)malloc(sizeof(t_expr));
             if (!temp) {
               affecter_erreur(MEMORY_ERROR, ctx, __LINE__);
-              return FALSE;
+              break;
             }
 
             temp->type        = OP; 
@@ -693,7 +686,7 @@ bool convertir_postfix_en_ASA(t_contexte_execution *ctx)
             temp = (t_expr *)malloc(sizeof(t_expr));
             if (!temp) {
               affecter_erreur(MEMORY_ERROR, ctx, __LINE__);
-              return FALSE;
+              break;
             }
 
             temp->type = NOMBRE;
@@ -725,8 +718,10 @@ bool convertir_postfix_en_ASA(t_contexte_execution *ctx)
           succes = TRUE;
           break;
       default:
-          if (ctx->pile_termes.util > 1) {
-            affecter_erreur(TOO_MANY_TERMS, ctx, 0); 
+          if (ctx->erreur.id == NO_ERROR_YET) {
+            if (ctx->pile_termes.util > 1) {
+              affecter_erreur(TOO_MANY_TERMS, ctx, 0); 
+            }
           }
           break;
     }
@@ -846,7 +841,7 @@ void printPostscript(t_expr *p)
  *  Description:  Imprime les sorties sur stdout.
  * =====================================================================================
  */
-void rapporter_expressions(t_contexte_execution *ctx) //t_str *s, t_expr *p, double resultat)
+void rapporter_expressions(t_contexte_execution *ctx)
 {
   printf("    Scheme:");
   printScheme(ctx->ASA);
