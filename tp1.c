@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  tp1.c
+ *       File Nom:  tp1.c
  *
  *    Description:  TP1 effectué dans le cadre du cours IFT2035, 
  *                  Concepts des langages de programmation.
@@ -38,8 +38,8 @@
 #define TRUE 1
 #define FALSE 0
 #define CHIFFRES "0123456789"
-char *yes_syntaxe = "ERREUR DE SYNTAXE DANS L’EXPRESSION: ";
-char *no_syntaxe = "Une erreur est survenue lors du traîtement de l'expression: ";
+static char *yes_syntaxe = "ERREUR DE SYNTAXE DANS L’EXPRESSION: ";
+static char *no_syntaxe = "Une erreur est survenue lors du traîtement de l'expression: ";
 
 //Free pointer X
 #define FREE_PTR(x) \
@@ -116,7 +116,6 @@ typedef enum {
     TOO_MANY_TERMS,
     MEMORY_ERROR,
     DIVIDE_BY_ZERO,
-    NEWSTRING_ERROR1,
     CONVERSION_TO_DOUBLE_ERROR1,
     CONVERSION_TO_DOUBLE_ERROR2,
     CONVERSION_TO_DOUBLE_ERROR3,
@@ -147,7 +146,7 @@ typedef struct {
 
 //List of possible operations
 //symbol, precedance, dependance, op type
-t_op liste_op[] = { 
+static t_op liste_op[] = { 
     {'+', 0x00, FALSE, addition}, 
     {'-', 0x00, TRUE, soustraction}, 
     {'*', 0x01, FALSE, multiplication}, 
@@ -196,8 +195,8 @@ static char *postscript_op[] = {"add", "sub", "mul", "div"};
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  void ERROR(t_error e)
- *  Description:  Error output
+ *          Nom:  void affecter_erreur(t_error_id id, t_contexte_execution *ctx, int ligne)
+ *  Description:  Assigne une erreur au contexte d'exécution
  * =====================================================================================
  */
 void affecter_erreur(t_error_id id, t_contexte_execution *ctx, int ligne) {
@@ -229,10 +228,6 @@ void affecter_erreur(t_error_id id, t_contexte_execution *ctx, int ligne) {
 
         case DIVIDE_BY_ZERO:
             ctx->erreur.msg = "Divison par zero\n";
-            break;
-
-        case NEWSTRING_ERROR1:
-            ctx->erreur.msg = "Erreur de programmation **str est NULL. Défaut venant ";
             break;
 
         case CONVERSION_TO_DOUBLE_ERROR1:
@@ -272,7 +267,7 @@ void affecter_erreur(t_error_id id, t_contexte_execution *ctx, int ligne) {
 #ifdef stack_debug
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  void print_t_expr(t_expr* ex)
+ *          Nom:  void print_t_expr(t_expr* ex)
  *  Description:  Print t_expr
  * =====================================================================================
  */
@@ -287,7 +282,7 @@ void print_atomic_t_expr(t_expr* ex)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  void print_stack(t_pile_termes* p)
+ *          Nom:  void print_stack(t_pile_termes* p)
  *  Description:  Prints stack p content.
  * =====================================================================================
  */
@@ -305,61 +300,44 @@ void print_stack(t_pile_termes* p)
 }
 #endif
 
-/* 
+
+/*-----------------------------------------------------------------------------
+ *  FONCTIONS associé aux opérations permises dans la vocabulaire du language 
+ *            Ces fonctions seront appelés durant le traitement calculant le
+ *            résultat de l'expression.  Elles seront appelées au moyen du pointeur
+ *            à une fonction défini dans la structure t_op à l'attribut funct.
+ *-----------------------------------------------------------------------------
+ */
+/*
  * ===  FUNCTION  ======================================================================
- *         Name:  bool addition(double gauche, double droite, double *resultat)
- *  Description:  Sum of gauche and droite
+ *          Nom:  bool addition(void *ctx, double gauche, double droite, double *resultat)
+ *  Description:  Somme de gauche et droite
  * =====================================================================================
  */
 bool addition(void *ctx, double gauche, double droite, double *resultat)
 {
   *resultat = gauche + droite;
-/*
-  if (gauche >= 0 &&
-      droite >= 0) {
-    if (*resultat < gauche) {
-      affecter_erreur(ADDITION_CARRY, ctx, 0);
-      return FALSE;
-    }
-    if (*resultat < 0) {
-      affecter_erreur(ADDITION_POS_PLUS_POS_GIVING_NEG, ctx, 0); 
-      return FALSE;
-    }
-  }
-
-  if (gauche <= 0 &&
-      droite <= 0) {
-    if (*resultat > gauche) {
-      affecter_erreur(ADDITION_CARRY, ctx, 0);
-      return FALSE;
-    }
-    if (*resultat > 0) {
-      affecter_erreur(ADDITION_NEG_PLUS_NEG_GIVING_POS, ctx, 0); 
-      return FALSE;
-    }
-  }*/
-
   return TRUE;
 }
 
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  bool soustraction(double gauche, double droite, double *resultat)
- *  Description:  Difference of gauche and droite
+ *          Nom:  bool soustraction(void *ctx, double gauche, double droite, double *resultat)
+ *  Description:  Différence de gauche et droite
  * =====================================================================================
  */
 bool soustraction(void *ctx, double gauche, double droite, double *resultat)
 {
-    droite = -droite;
-    return addition(ctx, gauche, droite, resultat);
+    *resultat = gauche - droite;
+    return TRUE;
 }
 
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  bool multiplication(double gauche, double droite, double *resultat)
- *  Description:  Product of gauche and droite
+ *          Nom:  bool multiplication(void *ctx, double gauche, double droite, double *resultat)
+ *  Description:  Produit de gauche et droite
  * =====================================================================================
  */
 bool multiplication(void *ctx, double gauche, double droite, double *resultat)
@@ -371,14 +349,14 @@ bool multiplication(void *ctx, double gauche, double droite, double *resultat)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  bool division(double gauche, double droite, double *resultat)
- *  Description:  Quotient of gauche and droite
+ *          Nom:  bool division(void *ctx, double gauche, double droite, double *resultat)
+ *  Description:  Quotient de gauche et droite
  * =====================================================================================
  */
 bool division(void *ctx, double gauche, double droite, double *resultat)
 {
     if (!droite) { 
-        affecter_erreur(DIVIDE_BY_ZERO, ctx, 0); 
+        affecter_erreur(DIVIDE_BY_ZERO, ctx, 0);
         return FALSE;
     }
 
@@ -390,7 +368,7 @@ bool division(void *ctx, double gauche, double droite, double *resultat)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  t_op *type_op(char c)
+ *          Nom:  t_op *type_op(char c)
  *  Description:  Return the operator type of a character
  * =====================================================================================
  */
@@ -406,60 +384,39 @@ t_op *type_op(char c)
 }
 
 
-
-
-
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  bool newString(char *s, long len, t_str **str, long line)
- *  Description:  Creates a full struct t_str
- *                Copies len_to_copy bytes from s if s is not NULL into (*str)->str
- *         Note:  Caller is responsible for validity of the parameter values
- *                if (len_to_copy > len_to_alloc) evaluates true, unexpected behaviour
- *                may occur.
+ *          Nom:  bool alloc_str(t_contexte_execution *ctx, long taille, t_str **str, 
+ *                                 int ligne, bool etendre)
+ *  Description:  Crée une structure t_str et initialise les données tel qu'énoncé par les 
+ *                paramètres.  Permet la reallocation lorsque etendre != FALSE
  * =====================================================================================
  */
-static bool newString(t_contexte_execution *ctx, char *s, long len_to_copy, long len_to_alloc, t_str **str, int ligne)
+static bool alloc_str(t_contexte_execution *ctx, long taille, t_str **str, int ligne, bool etendre)
 {
   t_str *temp;
 
-  if (!str) {
-    affecter_erreur(NEWSTRING_ERROR1, ctx, ligne);
-    return FALSE;
-  }
-
-  temp = (t_str *)malloc((sizeof(t_str) + len_to_alloc));
+  temp = etendre ? (t_str *)realloc(*str, sizeof(t_str) + sizeof(char) * taille)
+                 : (t_str *)malloc(sizeof(t_str) + sizeof(char) * taille);
   if (!temp) {
     affecter_erreur(MEMORY_ERROR, ctx, ligne);
     return FALSE;
   }
-
+  temp->alloc = taille;
   temp->str = (char *)(temp + 1);  // premier byte au delà de la struct t_str allouée plus haut
-  if (s) {
-    memcpy(temp->str, s, len_to_copy);
-    temp->str[len_to_copy] = 0;
-    temp->util = len_to_copy;
-  } else {
-    temp->util = 0;  // caller should take care of ->util
-    if (len_to_alloc)
-      temp->str[0] = 0;
-  }
-
-  temp->alloc = len_to_alloc;
 
   *str = temp;
 
   return TRUE;
 }
 
-
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  void delString(t_str **str)
- *  Description:  Frees the String and sets the pointer to NULL
+ *          Nom:  void freeString(t_str **str)
+ *  Description:  libère la string pointée par *str
  * =====================================================================================
  */
-static void delString(t_str **str)
+static void liberer_str(t_str **str)
 {
   if (!str)
     return;
@@ -469,19 +426,16 @@ static void delString(t_str **str)
 
 
 
-
-
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  bool lire_expr_postfix(t_str *s, FILE *infile)
+ *          Nom:  bool lire_expr_postfix(t_str *s, FILE *infile)
  *  Description:  Read expression from string  
  * =====================================================================================
  */
 bool lire_expr_postfix(t_contexte_execution *ctx, FILE *stream)
 {
     char c;
-    t_str *str = ctx->expression;
-    str->util = 0;
+    ctx->expression->util = 0;
     
     do {
 
@@ -489,19 +443,14 @@ bool lire_expr_postfix(t_contexte_execution *ctx, FILE *stream)
         if (feof(stream)) 
             break; 
 
-        if (str->util == str->alloc) {
-            t_str *temp;
-
-            // reallocation
-            if (!newString(ctx, str->str, str->util, str->alloc << 1, &temp, __LINE__))
+        if (ctx->expression->util == ctx->expression->alloc) {
+            if (!alloc_str(ctx, ctx->expression->alloc << 1, &ctx->expression, __LINE__, TRUE))
               return FALSE;
-            delString(&str);
-            ctx->expression = str = temp;  // return possible new str address.
         }
 
         if (c == '\n') c = 0;
 
-        str->str[str->util++] = c;
+        ctx->expression->str[ctx->expression->util++] = c;
 
     } while(c);
 
@@ -511,7 +460,7 @@ bool lire_expr_postfix(t_contexte_execution *ctx, FILE *stream)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  bool push_pile_termes(t_pile_termes *p, t_expr *noeud)
+ *          Nom:  bool push_pile_termes(t_pile_termes *p, t_expr *noeud)
  *  Description:  Push an expression on the stack, after increasing its size by 16
  * =====================================================================================
  */
@@ -544,7 +493,7 @@ bool push_pile_termes(t_contexte_execution *ctx, t_expr *noeud)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  bool pop_pile_termes(t_pile_termes *p, t_expr **noeud)
+ *          Nom:  bool pop_pile_termes(t_pile_termes *p, t_expr **noeud)
  *  Description:  Pop an expression from the stack
  * =====================================================================================
  */
@@ -567,7 +516,7 @@ bool pop_pile_termes(t_contexte_execution *ctx, t_expr **noeud)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  void liberer_expr(t_expr **p)
+ *          Nom:  void liberer_expr(t_expr **p)
  *  Description:  Free recursively memory of p
  * =====================================================================================
  */
@@ -579,7 +528,7 @@ void liberer_expr(t_expr **p)
 
   //Le pointeur est une t_expr de type OP
   if ((*p)->type == OP) {
-    //Appel recursif pour liberer le terme gauche et droit
+    //Appels recursifs pour liberer les termes gauche et droit
     liberer_expr(&(*p)->_.op.gauche);
     liberer_expr(&(*p)->_.op.droite);
     FREE_PTR(*p);
@@ -587,34 +536,20 @@ void liberer_expr(t_expr **p)
   }
 
   if ((*p)->type == NOMBRE) {
-    //delString(&expr->_.nombre);
     FREE_PTR(*p);
     return;
   }
 
   printf("Type de noeud inconnu!\n");
   DEBUG_EXPR((*p));
-/*
-  if (nb_blocs != 0)
-  {
-    printf("Dumping leaks:\n");
-    t_resource *temp;
-    for(temp = g_res; 
-        temp; 
-        temp = temp->next)
-    {
-      printf("  fuite trouvée pour l'allocation faite à la ligne %d.\n", temp->ligne);
-    }
-  }
-*/
+
   exit(2);
 }
 
 
-
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  void liberer_termes_de_la_pile(t_pile_termes *p)
+ *          Nom:  void liberer_termes_de_la_pile(t_pile_termes *p)
  *  Description:  Free stack 
  * =====================================================================================
  */
@@ -628,10 +563,9 @@ void liberer_termes_de_la_pile(t_contexte_execution *ctx)
   }
 }
 
-
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  bool convertir_postfix_en_ASA(t_contexte_execution *ctx)
+ *          Nom:  bool convertir_postfix_en_ASA(t_contexte_execution *ctx)
  *  Description:  Convert postfix expression to abstract syntax tree using a stack
  * =====================================================================================
  */
@@ -690,10 +624,6 @@ bool convertir_postfix_en_ASA(t_contexte_execution *ctx)
             }
 
             temp->type = NOMBRE;
-/*
-            if (!newString(ctx, p, len, len + 1, &temp->_.nombre, __LINE__))
-                break;
-*/
             temp->_.nombre.ptr = p;
             temp->_.nombre.len = len;
 
@@ -740,8 +670,8 @@ bool convertir_postfix_en_ASA(t_contexte_execution *ctx)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  void ajouter_parentheses(t_expr *parent, t_expr *gauche, bool *parenthese_gauche, t_expr *droite, bool *parenthese_droite)
- *  Description:  Détermine si l'ajout de parentheses à gauche ou à droite est nécessaire
+ *          Nom:  void ajouter_parentheses(t_expr *parent, t_expr *gauche, bool *parenthese_gauche, t_expr *droite, bool *parenthese_droite)
+ *  Description:  Détermine si l'ajout de parentheses à gauche et/ou à droite est nécessaire
  * =====================================================================================
  */
 void ajouter_parentheses(t_expr *parent, 
@@ -768,7 +698,7 @@ void ajouter_parentheses(t_expr *parent,
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  printScheme(t_expr *p)
+ *          Nom:  printScheme(t_expr *p)
  *  Description:  Imprime l'expression en Scheme en parcourant l'ASA.
  * =====================================================================================
  */
@@ -788,7 +718,7 @@ void printScheme(t_expr *p)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  printC(t_expr *p)
+ *          Nom:  printC(t_expr *p)
  *  Description:  Imprime l'expression en C en parcourant l'ASA.
  * =====================================================================================
  */
@@ -818,7 +748,7 @@ void printC(t_expr *p)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  printPostscript(t_expr *p)
+ *          Nom:  printPostscript(t_expr *p)
  *  Description:  Imprime l'expression en Postscript en parcourant l'ASA.
  * =====================================================================================
  */
@@ -837,7 +767,7 @@ void printPostscript(t_expr *p)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  rapporter_expressions(t_str *s, t_expr *p, double resultat)
+ *          Nom:  rapporter_expressions(t_str *s, t_expr *p, double resultat)
  *  Description:  Imprime les sorties sur stdout.
  * =====================================================================================
  */
@@ -860,7 +790,7 @@ void rapporter_expressions(t_contexte_execution *ctx)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  evaluer_expression(t_expr *p, double *result)
+ *          Nom:  evaluer_expression(t_expr *p, double *result)
  *  Description:  Calcule le résultat de l'expression en entrée et store celui-ci dans 
  *                result.
  * =====================================================================================
@@ -909,7 +839,7 @@ bool evaluer_expression(t_contexte_execution *ctx, t_expr *p, double *result)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  init_contexte(t_contexte_execution *ctx) 
+ *          Nom:  init_contexte(t_contexte_execution *ctx) 
  *  Description:  Initialise les variables de contexte pour le traîtement d'une 
  *                expression.  À appeler avec chaque traîtement.
  * =====================================================================================
@@ -929,7 +859,7 @@ void init_contexte(t_contexte_execution *ctx)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  liberer_var_allouee_contexte(t_contexte_execution *ctx)
+ *          Nom:  liberer_var_allouee_contexte(t_contexte_execution *ctx)
  *  Description:  Libère les variables alloué lors du contexte d'exécution du traîtement
  *                d'expressions.  
  * =====================================================================================
@@ -941,13 +871,13 @@ void liberer_var_allouee_contexte(t_contexte_execution *ctx)
     FREE_PTR(ctx->pile_termes.termes);
   }
   liberer_expr(&ctx->ASA);
-  delString(&ctx->expression);
+  liberer_str(&ctx->expression);
 }
 
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  rapporter_erreur(t_contexte_execution *ctx) 
+ *          Nom:  rapporter_erreur(t_contexte_execution *ctx) 
  *  Description:  Fonction qui imprime les erreurs rencontrées lors du traîtement
  *                d'une expressions.
  * =====================================================================================
@@ -977,7 +907,7 @@ int main(int argc, char **argv)
   t_contexte_execution contexte;
   memset(&contexte, 0, sizeof(contexte));
 
-  if (!newString(&contexte, NULL, 0, 0x400, &contexte.expression, __LINE__))  // start with 1Kb
+  if (!alloc_str(&contexte, 0x400, &contexte.expression, __LINE__, FALSE))  // start with 1Kb
     return 1;
 
   for (;
@@ -995,9 +925,6 @@ int main(int argc, char **argv)
         printf("\n");
         break;
       }
-
-      if (!strcmp(contexte.expression->str, "^D"))
-          break;
 
       if (!convertir_postfix_en_ASA(&contexte))
           continue;
