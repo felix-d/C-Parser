@@ -21,11 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// include à enlever avant la remise.
 /*
-#include <float.h>
-#include <errno.h>
-
 #include "debug.h"
 */
 
@@ -798,25 +794,23 @@ void rapporter_expressions(t_contexte_execution *ctx)
 bool evaluer_expression(t_contexte_execution *ctx, t_expr *p, double *result)
 {
   if (p->type == NOMBRE) {
-    char *end;
-    //errno = 0;
-    *result = strtod(p->_.nombre.ptr, &end);
-/*
-    if ((errno == ERANGE) || 
-        (errno != 0 && *result == 0)) {
-      affecter_erreur(CONVERSION_TO_DOUBLE_ERROR1, ctx, 0); 
-      return FALSE;
-    }*/
-    if (end == p->_.nombre.ptr) {
-      affecter_erreur(CONVERSION_TO_DOUBLE_ERROR2, ctx, 0); 
-      return FALSE;
+    char *ptr;
+    int len, 
+        pow;
+    /***
+    Ici on convertit le nombre afin qu'on puisse l'utiliser les avec
+    opérateurs + - * / du langage C.  Les données ont été validées lors
+    de l'analyse de l'expression. 
+    ***/
+    *result = 0;
+    ptr = &p->_.nombre.ptr[p->_.nombre.len - 1];
+    pow = 1;
+    for (len = p->_.nombre.len; len; len--) {
+      *result += (*ptr - '0') * pow;
+      ptr--;
+      pow *= 10;
     }
 
-    if (&p->_.nombre.ptr[p->_.nombre.len] != end) {
-      affecter_erreur(CONVERSION_TO_DOUBLE_ERROR3, ctx, 0); 
-      return FALSE;
-    }
-    
     return TRUE;
   }
 
