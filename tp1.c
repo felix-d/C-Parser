@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-//#include "debug.h"
+#include "debug.h"
 
 
 /*-----------------------------------------------------------------------------
@@ -69,8 +69,8 @@ typedef struct _op {
 
 // Structure pour les chaînes de caractères.
 typedef struct _str {
-    long alloc;
-    long util;
+    int alloc;
+    int util;
     char *str;
 } t_str;
 
@@ -94,6 +94,8 @@ typedef struct _expr {
   } _;
 } t_expr;
 
+typedef t_expr t_ASA;
+
 // Structure pile de termes
 typedef struct {
     int alloc; // nombre d'éléments alloués
@@ -108,21 +110,18 @@ typedef enum {
     UNKNOWN_CHARACTER,
     TOO_MANY_TERMS,
     MEMORY_ERROR,
+    MEMORY_ERROR_STR,
+    MEMORY_ERROR_EXPR,
     DIVIDE_BY_ZERO,
-    CONVERSION_TO_DOUBLE_ERROR1,
-    CONVERSION_TO_DOUBLE_ERROR2,
-    CONVERSION_TO_DOUBLE_ERROR3,
-    ADDITION_CARRY,
-    ADDITION_NEG_PLUS_NEG_GIVING_POS,
-    ADDITION_POS_PLUS_POS_GIVING_NEG,
     NOTHING_TO_PROCESS
 } t_error_id;
 
 // structure qui est utilisée tout au long du traitement de l'expression en entrée.
 typedef struct {
+  FILE          *entree;
   t_str         *expression;
   t_pile_termes pile_termes;
-  t_expr        *ASA;
+  t_ASA         *ASA;
   struct {
     t_error_id  id;
     char        *msg;
@@ -229,57 +228,35 @@ void affecter_erreur(t_error_id id, t_contexte_execution *ctx, int ligne) {
 
         case MISSING_RIGHT_TERM:
         case MISSING_LEFT_TERM:
-            ctx->erreur.msg = "Terme de manquant.  Pas assez d'opérandes disponible pour le traîtement d'un opérateur.\n";
+            ctx->erreur.msg = "Terme de manquant.  Pas assez d'opérandes disponible pour le traîtement d'un opérateur.";
             ctx->erreur.syntaxe = yes_syntaxe;
             break;
 
         case UNKNOWN_CHARACTER:
-            ctx->erreur.msg = "Caractère inconnu\n";
+            ctx->erreur.msg = "Caractère inconnu.";
             break;
 
         case TOO_MANY_TERMS:
-            ctx->erreur.msg = "Trop de termes pour le nombre d'opérateur\n";
+            ctx->erreur.msg = "Trop de termes pour le nombre d'opérateurs.";
             ctx->erreur.syntaxe = yes_syntaxe;
             break;
 
         case MEMORY_ERROR:
-            ctx->erreur.msg = "Problème lors de l'allocation de memoire ";
+        case MEMORY_ERROR_STR:
+        case MEMORY_ERROR_EXPR:
+            ctx->erreur.msg = "Problème lors de l'allocation de memoire";
             break;
 
         case DIVIDE_BY_ZERO:
-            ctx->erreur.msg = "Divison par zero\n";
+            ctx->erreur.msg = "Divison par zero.";
             break;
 
-        case CONVERSION_TO_DOUBLE_ERROR1:
-            ctx->erreur.msg = "Erreur de conversion à un double.  L'expression ne peut pas être évaluée de façon précise.\n";
-            break;            
-
-        case CONVERSION_TO_DOUBLE_ERROR2:
-            ctx->erreur.msg = "Erreur de conversion à un double.  Aucun caractère traité.\n";
-            break;            
-
-        case CONVERSION_TO_DOUBLE_ERROR3:
-            ctx->erreur.msg = "Erreur de conversion à un double.  Longueur de chaîne traitée différente de prévue par programmation.\n";
-            break;            
-
-        case ADDITION_CARRY:
-            ctx->erreur.msg = "Erreur d'addition.  Le résultat est plus petit ou plus grand que les opérandes, selon le signe de celle-ci.\n";
-            break;            
-
-        case ADDITION_NEG_PLUS_NEG_GIVING_POS:
-            ctx->erreur.msg = "Erreur d'addition.  nombre négatif + nombre négatif = nombre positif.\n";
-            break;            
-
-        case ADDITION_POS_PLUS_POS_GIVING_NEG:
-            ctx->erreur.msg = "Erreur d'addition.  nombre positif + nombre positif = nombre négatif.\n";
-            break;            
-
         case NOTHING_TO_PROCESS:
-            ctx->erreur.msg = "Expression à blanc.\n";
+            ctx->erreur.msg = "Expression à blanc.";
             break;            
             
         default:
-            ctx->erreur.msg = "Code d'erreur inconnu\n";
+            ctx->erreur.msg = "Code d'erreur inconnu.";
             break;
     }
 }
@@ -299,11 +276,28 @@ void rapporter_erreur(t_contexte_execution *ctx)
     sprintf(str, " à la ligne %d", ctx->erreur.ligne);
   else
     str[0] = 0;
-
-  printf("%s%s --> %s%s", 
+  /* 
+   utilisation de %.s pour l'impression de l'expression, car on 
+   pourrait ne pas avoir de terminateur si l'expression ne peut 
+   être lue au complet lors d'un échec de reallocation.
+    */ 
+  printf("%s%.*s", 
          ctx->erreur.syntaxe, 
-         ctx->expression->str, 
-         ctx->erreur.msg, 
+         ctx->expression->util, ctx->expression->str);
+
+  if (ctx->erreur.id == MEMORY_ERROR_EXPR) {  // il reste des octets non-lus.
+    while(TRUE) {
+      char c = fgetc(ctx->entree);
+      if (feof(ctx->entree))
+        break; 
+      if (c == '\n')
+        break;
+      putchar(c);
+    }
+  }
+
+  printf(" --> Description : %s%s\n\n", 
+         ctx->erreur.msg,                              
          str);
 }
 
@@ -397,18 +391,25 @@ bool push_pile_termes(t_contexte_execution *ctx, t_expr *noeud)
   t_pile_termes *p = &ctx->pile_termes;
 
   if (p->util == p->alloc) {
+    t_pile_termes temp;  // variable temporaire pour éviter de perdre l'adresse 
+                         // ctx->pile_termes.termes dans le cas où realloc 
+                         // retournerait NULL.  Cette situation causerait une faute
+                         // de segment lors du vidage la de pile. 
     if (!p->alloc) {
-      p->alloc = 16;
-      p->termes = (t_expr **)malloc(sizeof(t_expr *) * p->alloc);
+      temp.alloc = 16;
+      temp.termes = (t_expr **)malloc(sizeof(t_expr *) * temp.alloc);
     } else {
-      p->alloc <<= 1;
-      p->termes = (t_expr **)realloc((t_expr **)p->termes, sizeof(t_expr *) * p->alloc);
+      temp.alloc = p->alloc << 1;
+      temp.termes = (t_expr **)realloc(p->termes, sizeof(t_expr *) * temp.alloc);
     }
 
-    if (!p->termes) {
+    if (temp.termes == NULL) {
       affecter_erreur(MEMORY_ERROR, ctx, __LINE__);
       return FALSE;
     }
+
+    p->alloc  = temp.alloc;
+    p->termes = temp.termes;
   }
 
   p->termes[p->util] = noeud;
@@ -443,11 +444,11 @@ bool pop_pile_termes(t_contexte_execution *ctx, t_expr **noeud)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *          Nom:  void liberer_termes_de_la_pile(t_pile_termes *p)
+ *          Nom:  void vider_pile_termes(t_pile_termes *p)
  *  Description:  Libère toutes les expressions présentes dans la pile de termes
  * =====================================================================================
  */
-void liberer_termes_de_la_pile(t_contexte_execution *ctx)
+void vider_pile_termes(t_contexte_execution *ctx)
 {
   t_expr *temp;
 
@@ -480,7 +481,7 @@ static bool alloc_str(t_contexte_execution *ctx, long taille, t_str **str, int l
   temp = etendre ? (t_str *)realloc(*str, sizeof(t_str) + sizeof(char) * taille)
                  : (t_str *)malloc(sizeof(t_str) + sizeof(char) * taille);
   if (!temp) {
-    affecter_erreur(MEMORY_ERROR, ctx, ligne);
+    affecter_erreur(MEMORY_ERROR_STR, ctx, ligne);
     return FALSE;
   }
   temp->alloc = taille;
@@ -512,21 +513,28 @@ static void liberer_str(t_str **str)
  *  Description:  Lit l'entrée et store son contenu dans expression.
  * =====================================================================================
  */
-bool lire_expr_postfix(t_contexte_execution *ctx, FILE *stream)
+bool lire_expression_postfix(t_contexte_execution *ctx, FILE *stream)
 {
     char c;
     ctx->expression->util = 0;
     
     do {
 
+        /* si un agrandissement d'espace destiné à l'expression est requis, le faire avant
+           avant de lire le prochain caractère.  Ceci permet de rapporter l'erreur d'allocation
+           tout en rapportant le reste de l'expression dans le message d'erreur sans avoir à
+           sauvegarder le caractère lu dans le contexte. 
+         */
+        if (ctx->expression->util == ctx->expression->alloc) {  
+          if (!alloc_str(ctx, 2*ctx->expression->alloc, &ctx->expression, __LINE__, TRUE)) {
+            ctx->erreur.id = MEMORY_ERROR_EXPR;
+            return FALSE;
+          }
+        }
+
         c = fgetc(stream);
         if (feof(stream)) 
-            break; 
-
-        if (ctx->expression->util == ctx->expression->alloc) {
-            if (!alloc_str(ctx, ctx->expression->alloc << 1, &ctx->expression, __LINE__, TRUE))
-              return FALSE;
-        }
+          break; 
 
         if (c == '\n') c = 0;
 
@@ -574,7 +582,7 @@ void init_contexte(t_contexte_execution *ctx)
  */
 void liberer_var_allouee_contexte(t_contexte_execution *ctx)
 {
-  liberer_termes_de_la_pile(ctx);
+  vider_pile_termes(ctx);
   if (ctx->pile_termes.alloc) {
     FREE_PTR(ctx->pile_termes.termes);
   }
@@ -591,6 +599,9 @@ void liberer_var_allouee_contexte(t_contexte_execution *ctx)
  *            Ces fonctions seront appelés durant le traitement calculant le
  *            résultat de l'expression.  Elles seront appelées au moyen du pointeur
  *            à une fonction défini dans la structure t_op à l'attribut funct.
+ * 
+ *    À NOTER Ces fonctions ne performent aucune validation n'est faite pour 
+ *            assurer la validité du résultat, à l'exception des divisions par zéro.  
  *-----------------------------------------------------------------------------
  */
 /*
@@ -759,10 +770,9 @@ void printPostscript(t_expr *p)
 }
 
 
-
 /* 
  * ===  FUNCTION  ======================================================================
- *          Nom:  evaluer_expression(t_expr *p, double *result)
+ *          Nom:  evaluer_expression(t_contexte_execution *ctx, t_expr *p, double *result)
  *  Description:  Calcule le résultat de l'expression en entrée et store celui-ci dans 
  *                result.
  * =====================================================================================
@@ -809,7 +819,7 @@ bool evaluer_expression(t_contexte_execution *ctx, t_expr *p, double *result)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *          Nom:  rapporter_expressions(t_str *s, t_expr *p, double resultat)
+ *          Nom:  rapporter_expressions(t_contexte_execution *ctx)
  *  Description:  Imprime les sorties sur stdout.
  * =====================================================================================
  */
@@ -833,12 +843,12 @@ void rapporter_expressions(t_contexte_execution *ctx)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *          Nom:  bool convertir_postfix_en_ASA(t_contexte_execution *ctx)
+ *          Nom:  bool convertir_expression_en_ASA(t_contexte_execution *ctx)
  *  Description:  Valide et convertit l'expression postfix venant de l'entrée et
  *                crée un arbre de syntaxe abstraite.
  * =====================================================================================
  */
-bool convertir_postfix_en_ASA(t_contexte_execution *ctx)
+bool convertir_expression_en_ASA(t_contexte_execution *ctx)
 {
     char *p; 
     t_expr *temp;
@@ -862,8 +872,8 @@ bool convertir_postfix_en_ASA(t_contexte_execution *ctx)
 
             temp = (t_expr *)malloc(sizeof(t_expr));
             if (!temp) {
-              affecter_erreur(MEMORY_ERROR, ctx, __LINE__);
-              break;
+                affecter_erreur(MEMORY_ERROR, ctx, __LINE__);
+                break;
             }
 
             temp->type        = OP; 
@@ -888,8 +898,8 @@ bool convertir_postfix_en_ASA(t_contexte_execution *ctx)
 
             temp = (t_expr *)malloc(sizeof(t_expr));
             if (!temp) {
-              affecter_erreur(MEMORY_ERROR, ctx, __LINE__);
-              break;
+                affecter_erreur(MEMORY_ERROR, ctx, __LINE__);
+                break;
             }
 
             temp->type = NOMBRE;
@@ -903,33 +913,30 @@ bool convertir_postfix_en_ASA(t_contexte_execution *ctx)
 
             affecter_erreur(UNKNOWN_CHARACTER, ctx, 0); 
             break;
+
         }
     }  
 
-    switch(ctx->pile_termes.util) {
-
-      case 0:  
-          if (ctx->erreur.id == NO_ERROR_YET)
-            affecter_erreur(NOTHING_TO_PROCESS, ctx, 0); // cas où l'expression ne contient que des espaces et autres caractères considérés comme espace
-          break; 
-      case 1:
+    if (ctx->erreur.id == NO_ERROR_YET) {
+      switch(ctx->pile_termes.util) {
+        case 0:  
+          affecter_erreur(NOTHING_TO_PROCESS, ctx, 0); // cas où l'expression ne contient que des espaces     
+          break;                                       // et autres caractères considérés comme espace
+        case 1:
           pop_pile_termes(ctx, &ctx->ASA);
           succes = TRUE;
           break;
-      default:
-          if (ctx->erreur.id == NO_ERROR_YET) {
-            if (ctx->pile_termes.util > 1) {
-              affecter_erreur(TOO_MANY_TERMS, ctx, 0); 
-            }
-          }
+        default:
+          if (ctx->pile_termes.util > 1)
+            affecter_erreur(TOO_MANY_TERMS, ctx, 0); 
           break;
+      }
     }
 
-    if (!succes) {
-        liberer_termes_de_la_pile(ctx);
-        
-        if (temp)
-           liberer_expr(&temp);
+    if (!succes) {  // faire la récupération de la mémoire alloué pour le traitement de l'expression.
+      vider_pile_termes(ctx);
+      if (temp)
+        liberer_expr(&temp);
     }
 
     return succes;
@@ -946,8 +953,10 @@ int main(int argc, char **argv)
 {
   t_contexte_execution contexte;
   memset(&contexte, 0, sizeof(contexte));
+  
+  contexte.entree = stdin;
 
-  if (!alloc_str(&contexte, 0x400, &contexte.expression, __LINE__, FALSE))  // start with 1Kb
+  if (!alloc_str(&contexte, 0x400, &contexte.expression, __LINE__, FALSE))  // 1Kb
     return 1;
 
   for (;
@@ -958,15 +967,15 @@ int main(int argc, char **argv)
 
       printf("EXPRESSION? ");
 
-      if (!lire_expr_postfix(&contexte, stdin))
+      if (!lire_expression_postfix(&contexte, contexte.entree))
           continue; 
 
-      if (feof(stdin)) {  // ctrl-d sets EOF
-        printf("\n");
-        break;
+      if (feof(contexte.entree)) {
+          printf("\n");
+          break;
       }
 
-      if (!convertir_postfix_en_ASA(&contexte))
+      if (!convertir_expression_en_ASA(&contexte))
           continue;
 
       if (!evaluer_expression(&contexte, contexte.ASA, &contexte.resultat))
