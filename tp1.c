@@ -190,7 +190,9 @@ static char *postscript_op[] = {"add", "sub", "mul", "div"};
 /* 
  * ===  FUNCTION  ======================================================================
  *          Nom:  t_op *type_op(char c)
- *  Description:  Return the operator type of a character
+ *  Description:  Valide et retourne l'information sur l'opérateur trouvé.  Dans le cas
+ *                d'un caractère qui ne correspond pas à un opérateur, la fonction 
+ *                retourne NULL.
  * =====================================================================================
  */
 t_op *type_op(char c)
@@ -264,8 +266,8 @@ void affecter_erreur(t_error_id id, t_contexte_execution *ctx, int ligne) {
 /* 
  * ===  FUNCTION  ======================================================================
  *          Nom:  rapporter_erreur(t_contexte_execution *ctx) 
- *  Description:  Fonction qui imprime les erreurs rencontrées lors du traîtement
- *                d'une expressions.
+ *  Description:  Fonction qui imprime l'erreur rencontrée lors du traîtement
+ *                d'une expression.
  * =====================================================================================
  */
 void rapporter_erreur(t_contexte_execution *ctx) 
@@ -278,14 +280,15 @@ void rapporter_erreur(t_contexte_execution *ctx)
     str[0] = 0;
   /* 
    utilisation de %.s pour l'impression de l'expression, car on 
-   pourrait ne pas avoir de terminateur si l'expression ne peut 
-   être lue au complet lors d'un échec de reallocation.
+   pourrait ne pas avoir de terminateur de chaîne si l'expression 
+   ne peut être lue au complet dans l'éventualité d'un échec de 
+   reallocation, lors de la lecture de l'expression.
     */ 
   printf("%s%.*s", 
          ctx->erreur.syntaxe, 
          ctx->expression->util, ctx->expression->str);
 
-  if (ctx->erreur.id == MEMORY_ERROR_EXPR) {  // il reste des octets non-lus.
+  if (ctx->erreur.id == MEMORY_ERROR_EXPR) {  // il reste des octets non-lus à l'entrée.  Affichons-les.
     while(TRUE) {
       char c = fgetc(ctx->entree);
       if (feof(ctx->entree))
@@ -522,8 +525,9 @@ bool lire_expression_postfix(t_contexte_execution *ctx, FILE *stream)
 
         /* si un agrandissement d'espace destiné à l'expression est requis, le faire avant
            avant de lire le prochain caractère.  Ceci permet de rapporter l'erreur d'allocation
-           tout en rapportant le reste de l'expression dans le message d'erreur sans avoir à
-           sauvegarder le caractère lu dans le contexte. 
+           tout en incluant l'expression complète présente en entrée dans le message d'erreur.
+           En lisant le caractère avant de déterminer s'il peut être ajouté à l'expression, on 
+           aurait la tâche de le sauvegarder pour l'imprimer plus tard. 
          */
         if (ctx->expression->util == ctx->expression->alloc) {  
           if (!alloc_str(ctx, 2*ctx->expression->alloc, &ctx->expression, __LINE__, TRUE)) {
@@ -557,7 +561,7 @@ bool lire_expression_postfix(t_contexte_execution *ctx, FILE *stream)
  * ===  FUNCTION  ======================================================================
  *          Nom:  init_contexte(t_contexte_execution *ctx) 
  *  Description:  Initialise les variables de contexte pour le traîtement d'une 
- *                expression.  À appeler avec chaque traîtement.
+ *                expression.
  * =====================================================================================
  */
 void init_contexte(t_contexte_execution *ctx) 
@@ -600,8 +604,8 @@ void liberer_var_allouee_contexte(t_contexte_execution *ctx)
  *            résultat de l'expression.  Elles seront appelées au moyen du pointeur
  *            à une fonction défini dans la structure t_op à l'attribut funct.
  * 
- *    À NOTER Ces fonctions ne performent aucune validation n'est faite pour 
- *            assurer la validité du résultat, à l'exception des divisions par zéro.  
+ *    À NOTER Ces fonctions ne performent aucune validation afin d'assurer la
+ *            la validité du résultat, à l'exception des divisions par zéro.  
  *-----------------------------------------------------------------------------
  */
 /*
